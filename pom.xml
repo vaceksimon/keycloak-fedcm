@@ -12,7 +12,7 @@
     <packaging>jar</packaging>
 
     <properties>
-        <keycloak.version>22.0.4.fedcm</keycloak.version>
+        <keycloak.version>${project.version}</keycloak.version>
 
         <maven.plugins.compiler.version>3.13.0</maven.plugins.compiler.version>
         <maven.plugins.jar.version>3.3.0</maven.plugins.jar.version>

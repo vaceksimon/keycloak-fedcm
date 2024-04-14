@@ -1,49 +1,53 @@
 async function login() {
-	let nonce = 123456;
+    let nonce = 123456;
 	let credential;
-		try {
-			credential = await navigator.credentials.get({
-  		identity: {
+	try {
+	    credential = await navigator.credentials.get({
+	        identity: {
 				context: "signup",
-  	  	providers: [{
-      		configURL: "http://localhost:8080/realms/fedcm-realm/fedcm/config.json",
-    	  	clientId: "example-idtoken",
-					nonce: nonce,
+                providers: [{
+                    configURL: "http://localhost:8080/realms/fedcm-realm/fedcm/config.json",
+                    clientId: "example-idtoken",
+                    nonce: nonce,
+                }],
+                mode: "widget"
+            },
+            mediation: "optional",
+        });
+	} catch (e) {
+		const code = e.code;
+		const url = e.url;
+		console.log(code);
+		console.log(url);
+		return;
 
-  	  	}],
-				mode: "widget"
- 		 },
-		 mediation: "optional",
-		});
-		} catch (e) {
-			const code = e.code;
-			const url = e.url;
-			console.log(code);
-			console.log(url);
-			return;
-
-		document.getElementById('error').innerHTML="";
-		}
-		decodedToken = getJSONIdToken(credential);
+	    document.getElementById('status').innerHTML="";
+	    document.getElementById('message').innerHTML="";
+	    document.getElementById('error').innerHTML="Error during login :(";
+	}
+	decodedToken = getJSONIdToken(credential);
 	
-		document.getElementById('status').innerHTML="Token: " + JSON.stringify(decodedToken);
-		document.getElementById('message').innerHTML="Hello " + decodedToken.given_name + " " + decodedToken.family_name + ". I have stolen your identity :)";
-
+	document.getElementById('status').innerHTML="Token: " + JSON.stringify(decodedToken);
+	document.getElementById('message').innerHTML="Hello " + decodedToken.given_name + " " + decodedToken.family_name + ". I have stolen your identity :)";
+	    document.getElementById('error').innerHTML="";
 }
 
 async function logout() {
 	try {
 		await IdentityCredential.disconnect({
-		  configURL: "http://localhost:8080/realms/fedcm-realm/fedcm/config.json",
-  		clientId: "example",
-  		accountHint: "test@test.com"
+		    configURL: "http://localhost:8080/realms/fedcm-realm/fedcm/config.json",
+		    clientId: "example-idtoken",
+		    accountHint: "test@test.com"
 		});
 
-		document.getElementById('status').innerHTML="Logout was successful";
+	    document.getElementById('status').innerHTML="Logout was successful";
+	    document.getElementById('message').innerHTML="";
 		document.getElementById('error').innerHTML="";
 	}
 	catch(e) {
 		document.getElementById('error').innerHTML="Error during logout :(";
+		document.getElementById('status').innerHTML="";
+		document.getElementById('message').innerHTML="";
 	}
 }
 

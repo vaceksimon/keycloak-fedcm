@@ -266,12 +266,24 @@ public class FedCMProvider implements RealmResourceProvider {
         if (!secFetchDest.equals("webidentity")) {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
+        RealmModel realm = session.getContext().getRealm();
 
         Map<String, String> id = new HashMap<>();
-        AuthResult authResult = (new AuthenticationManager()).authenticateIdentityCookie(session, session.getContext().getRealm());
+        AuthResult authResult = (new AuthenticationManager()).authenticateIdentityCookie(session, realm);
         if (authResult == null) {
             return Response.status(Response.Status.FORBIDDEN).build();
         }
+
+        // PERFORM ACTUAL KEYCLOAK LOGOUT
+        UserSessionModel userSession = authResult.getSession();
+        userSession.setNote(AuthenticationManager.KEYCLOAK_LOGOUT_PROTOCOL, OIDCLoginProtocol.LOGIN_PROTOCOL);
+        ClientModel client = realm.getClientByClientId(client_id);
+        if (client == null) {
+            return Response.status(Response.Status.UNAUTHORIZED).build();
+        }
+
+        AuthenticationManager.browserLogout(session, realm, userSession, session.getContext().getUri(), session.getContext().getConnection(), session.getContext().getRequestHeaders());
+
 
         UserModel userModel = authResult.getUser();
         id.put("account_id", userModel.getId());
