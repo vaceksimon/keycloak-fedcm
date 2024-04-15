@@ -6,7 +6,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.keycloak.services.resource.RootResourceProvider;
+import org.keycloak.fedcm.spi.RootResourceProvider;
 import org.keycloak.models.KeycloakSession;
 
 import java.util.HashMap;

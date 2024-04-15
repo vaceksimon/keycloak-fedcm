@@ -1,8 +1,8 @@
 package org.keycloak.fedcm;
 
 import org.keycloak.Config;
-import org.keycloak.services.resource.RootResourceProvider;
-import org.keycloak.services.resource.RootResourceProviderFactory;
+import org.keycloak.fedcm.spi.RootResourceProvider;
+import org.keycloak.fedcm.spi.RootResourceProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
