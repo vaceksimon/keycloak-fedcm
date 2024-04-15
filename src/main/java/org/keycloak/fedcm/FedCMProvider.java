@@ -102,8 +102,10 @@ public class FedCMProvider implements RealmResourceProvider {
         acc.put("given_name", userModel.getFirstName());
         acc.put("name", userModel.getFirstName() + ' ' + userModel.getLastName());
         acc.put("email", userModel.getEmail());
-        // just a hardcoded profile picture as Keycloak doesnt support pfp by default
-        acc.put("picture", "https://lh3.googleusercontent.com/a-/ALV-UjW7uuw5LcTap5TgMk9aHVl1RMm9HS79mMfhBJd8JlzkJSRIesrbkM69LF7Pw4yMYmVVUhUrl249NPd39iUQeknOT6sGRn4Y1CPbzuhHR4dIAlWT9kn69BVs2_pJc7vHjpHE50g_O6e-b_Pb80ukBweKcz9tMbO--QdcukwsS1SQJzo-ULqTri-HTfXb_wzUuwfnnIlNqWdQF70yOYBcqeqaYCrGo960dhEIzch75P1mAdvRz-ZkjbR-6_JuZZCDLz1BKuFz53AzchzaUEMtZ2um2R8Kkym1eO0zmnhN5FH0vr9BTLYZabl63TVrcbqfr8bHDx3OeH4lTdeF5JjRESVWNxermDJDlYalme3FGY6veShcsEBrDJIR2TPqLF087G2-vqk-_5RVaHAY8Y8QQ6EdrSIYc4UenJUj7tO1MTOntu5x2F8JK7MN_SvrAfK9xfz51cPGoMB8i9jCokwDjmazj8kHJ23xJ1tniq8jLe9qfS7Wl-q5Ik3bGWwZNJ7EC1zw5t7aMZwk3WPzi2jBko5ybsqzYfU-jyY6VeB8Zf_G7lb1v9bTMlrQ1yr624O5ISn71Y4i2PHH8FiEskvGvT5PhgW3iQJhQ8cEATMUu2BAh69XrldkJkbZhW8DnWeayqcem_6C6tq0DfbBMnL2KrFD5i-OzbF4vjRIMkpztNhz2yYwOATBx8q4fH8hrP2dujO98h7yUL8qawCPwbe06X-Dg635HytL5v9QpeIJnyS1Sw3QqD09FNIJ6ku5C3fJN0YfJPJ5BK-SB5LGqVks5imLzwH9wgDASV14IUx2byLlT7NE1U-jtY71hNXLqyLUv6RT2Hw3oObzlKciyRk63xp6B8QXHUnC7AZdBXE3OcQNJA3hZZIUn6f9AoD3nMc0iZx7IUZmv6a2WR1dbySTBU5Tw-OMF4LyJiPkKjs6n68gmtKixPjM7jvkYpWBRbXkrYso5GNbPH5NKgPKstW9FmRVru5M=s96-c-rg-br100");
+        String picture = userModel.getFirstAttribute("picture");
+        if (picture != null) {
+            acc.put("picture", picture);
+        }
         acc.put("approved_clients", new ArrayList<String>() {{
             // todo hardcoded, should be retrieved from Keycloak user attributes (?)
             add("123");
