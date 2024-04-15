@@ -15,6 +15,7 @@ import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -28,6 +29,7 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class FedCMProvider implements RealmResourceProvider {
@@ -106,12 +108,7 @@ public class FedCMProvider implements RealmResourceProvider {
         if (picture != null) {
             acc.put("picture", picture);
         }
-        acc.put("approved_clients", new ArrayList<String>() {{
-            // todo hardcoded, should be retrieved from Keycloak user attributes (?)
-            add("123");
-            add("456");
-            add("example");
-        }});
+        acc.put("approved_clients", userModel.getAttributeStream("approved_clients").toList());
         acc.put("login_hints", new ArrayList<String>() {{
             add(userModel.getEmail());
         }});
@@ -142,20 +139,25 @@ public class FedCMProvider implements RealmResourceProvider {
     @GET
     @Path("client_metadata")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response fetchClientMetadata(@HeaderParam("Sec-Fetch-Dest") String secFetchDest, @QueryParam("client_id") int client_id) {
+    public Response fetchClientMetadata(@HeaderParam("Sec-Fetch-Dest") String secFetchDest, @QueryParam("client_id") String client_id) {
         if (!secFetchDest.equals("webidentity")) {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
 
-        Map<String, Object> metadata = new HashMap<>();
-        // todo hardcoded, should be retrieved from Keycloak client attributes (?)
-        if (client_id == 123) {
-            metadata.put("privacy_policy_url", "https://www.seznam.cz/");
-            metadata.put("terms_of_service_url", "https://www.seznam.cz/");
-        } else {
-            metadata.put("privacy_policy_url", "https://www.google.com/");
-            metadata.put("terms_of_service_url", "https://www.google.com/");
+        ClientModel client = session.getContext().getRealm().getClientByClientId(client_id);
+        if(client == null) {
+            return Response.status(Response.Status.UNAUTHORIZED).build();
         }
+
+        RoleModel role = client.getRole("policies");
+        if (role == null) {
+           return Response.serverError().build();
+        }
+
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("privacy_policy_url", role.getFirstAttribute("privacy-policy"));
+        metadata.put("terms_of_service_url", role.getFirstAttribute("terms-of-service"));
+
         return Response.ok(metadata).type(MediaType.APPLICATION_JSON).build();
 
     }
@@ -239,6 +241,11 @@ public class FedCMProvider implements RealmResourceProvider {
         } else {
             return idAssertError("unauthorized_client", Response.Status.UNAUTHORIZED);
         }
+        List<String> approvedClients = new ArrayList<>(user.getAttributeStream("approved_clients").toList());
+        if (!approvedClients.contains(client_id)) {
+            approvedClients.add(client_id);
+            user.setAttribute("approved_clients", approvedClients);
+        }
 
         return Response.ok(token).type(MediaType.APPLICATION_JSON).build();
     }
@@ -290,17 +297,34 @@ public class FedCMProvider implements RealmResourceProvider {
         UserModel userModel = authResult.getUser();
         id.put("account_id", userModel.getId());
 
-        Response.ResponseBuilder rb = Response.ok(id);
-        return rb.header("Access-Control-Allow-Origin", client_origin)
-                .type(MediaType.APPLICATION_JSON)
+
+        return Response.ok(id)
+                .header("Access-Control-Allow-Origin", client_origin)
                 .header("Access-Control-Allow-Credentials", true)
+                .header("Access-Control-Allow-Headers", "Content-Type, Set-Login")
+                .header("Set-Login", "logged-out")
+                .type(MediaType.APPLICATION_JSON)
                 .build();
+    }
+
+    //TODO DELETE
+    @GET
+    @Path("test")
+    public Response testStatusAPI(@QueryParam("set") boolean set, @HeaderParam("Origin") String client_origin) {
+        if(set)
+            return Response.ok().header("Set-Login", "logged-in")
+                    .header("Access-Control-Allow-Origin", client_origin)
+                    .header("Access-Control-Allow-Credentials", true).type(MediaType.TEXT_PLAIN_TYPE).build();
+        else
+            return Response.ok().header("Set-Login", "logged-out")
+                    .header("Access-Control-Allow-Origin", client_origin)
+                    .header("Access-Control-Allow-Credentials", true).type(MediaType.TEXT_PLAIN_TYPE).build();
     }
 
     @GET
     @Path("error")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response disconnect(@QueryParam("error-type") String error_type) {
+    public Response errorRedirector(@QueryParam("error-type") String error_type) {
         Response.ResponseBuilder rb = Response.status(Response.Status.FOUND);
         switch (error_type) {
             case "unauthorized_client":
