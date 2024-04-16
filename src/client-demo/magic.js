@@ -46,7 +46,7 @@ async function logout() {
 
         // TODO get rid off
         // Use the fetch API to send a GET request
-        fetch("http://localhost:8080/realms/fedcm-realm/fedcm/test?set=false")
+        fetch("http://localhost:8080/realms/fedcm-realm/fedcm/logged-out")
           .then(response => {
             // Check if the request was successful
             if (!response.ok) {

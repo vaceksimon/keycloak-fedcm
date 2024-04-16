@@ -28,6 +28,7 @@ import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,12 +36,16 @@ import java.util.Map;
 
 public class FedCMProvider implements RealmResourceProvider {
 
-    private final String factoryID;
+    final String ENDPOINTCONFIG   = "config.json";
+    final String ENDPOINTACCOUNTS = "accounts";
+    final String ENDPOINTMETADATA = "client_metadata";
+    final String ENDPOINTIDASSERT = "id_assert";
+    final String ENDPOINTDISCONNECT = "disconnect";
+
     private final KeycloakSession session;
 
-    public FedCMProvider(KeycloakSession session, String factoryID) {
+    public FedCMProvider(KeycloakSession session) {
         this.session = session;
-        this.factoryID = factoryID;
     }
 
     @Override
@@ -49,24 +54,26 @@ public class FedCMProvider implements RealmResourceProvider {
     }
 
     @GET
-    @Path("config.json")
+    @Path(ENDPOINTCONFIG)
     @Produces(MediaType.APPLICATION_JSON)
     public Response fetchConfigFile() {
+        // check for the Sec-Fetch-Dest header
         checkRequestHeader();
 
-        KeycloakContext keycloakCtx = session.getContext();
-        String server = keycloakCtx.getAuthServerUrl().toString();
-        String realm = keycloakCtx.getRealm().getName();
+        // dynamically get Keycloak's url
+        URI requestURI = session.getContext().getUri().getRequestUri();
+        String fedcmPath = requestURI.resolve(".").toString();
+        String realmPath = requestURI.resolve("..").toString();
 
-        // fedcm endpoints
+        // prepare a JSON with the rest of Keycloak's FedCM endpoints
         Map<String, Object> fedCMEndpoints = new HashMap<>();
-        fedCMEndpoints.put("accounts_endpoint", server + "realms/" + realm + '/' + factoryID + "/accounts");
-        fedCMEndpoints.put("client_metadata_endpoint", server + "realms/" + realm + '/' + factoryID + "/client_metadata");
-        fedCMEndpoints.put("id_assertion_endpoint", server + "realms/" + realm + '/' + factoryID + "/id_assert");
-        fedCMEndpoints.put("login_url", server + "realms/" + realm + "/account");
-        fedCMEndpoints.put("disconnect_endpoint", server + "realms/" + realm + '/' + factoryID + "/disconnect");
-
+        fedCMEndpoints.put("accounts_endpoint", fedcmPath + ENDPOINTACCOUNTS);
+        fedCMEndpoints.put("client_metadata_endpoint", fedcmPath + ENDPOINTMETADATA);
+        fedCMEndpoints.put("id_assertion_endpoint", fedcmPath + ENDPOINTIDASSERT);
+        fedCMEndpoints.put("login_url", realmPath + "account");
+        fedCMEndpoints.put("disconnect_endpoint", fedcmPath + ENDPOINTDISCONNECT);
         fedCMEndpoints.put("branding", getBranding());
+
         return Response.ok(fedCMEndpoints).type(MediaType.APPLICATION_JSON).build();
     }
 
@@ -87,11 +94,10 @@ public class FedCMProvider implements RealmResourceProvider {
     }
 
     @GET
-    @Path("accounts")
+    @Path(ENDPOINTACCOUNTS)
     @Produces(MediaType.APPLICATION_JSON)
     public Response fetchAccountsList() {
-        // todo store somewhere approved_clients
-        // todo what to put in domain_hints
+        // check for the Sec-Fetch-Dest header
         checkRequestHeader();
 
         AuthResult authResult = (new AuthenticationManager()).authenticateIdentityCookie(session, session.getContext().getRealm());
@@ -138,9 +144,10 @@ public class FedCMProvider implements RealmResourceProvider {
     }
 
     @GET
-    @Path("client_metadata")
+    @Path(ENDPOINTMETADATA)
     @Produces(MediaType.APPLICATION_JSON)
     public Response fetchClientMetadata(@QueryParam("client_id") String client_id) {
+        // check for the Sec-Fetch-Dest header
         checkRequestHeader();
 
         ClientModel client = session.getContext().getRealm().getClientByClientId(client_id);
@@ -162,13 +169,14 @@ public class FedCMProvider implements RealmResourceProvider {
     }
 
     @POST
-    @Path("id_assert")
+    @Path(ENDPOINTIDASSERT)
     @Produces(MediaType.APPLICATION_JSON)
     public Response fetchIdentityAssertion(@HeaderParam("Origin") String origin,
                                            @FormParam("account_id") String account_id,
                                            @FormParam("client_id") String client_id,
                                            @FormParam("nonce") String nonce,
                                            @QueryParam("disclosure_text_shown") boolean disclosure_text_shown) {
+        // check for the Sec-Fetch-Dest header
         checkRequestHeader();
 
         RealmModel realm = session.getContext().getRealm();
@@ -248,10 +256,8 @@ public class FedCMProvider implements RealmResourceProvider {
 
     private Response idAssertError(String errorType, Response.Status responseStatus) {
         // todo Refactor
-        KeycloakContext keycloakCtx = session.getContext();
-        String serverString = keycloakCtx.getAuthServerUrl().toString();
-        String realmString = keycloakCtx.getRealm().getName();
-        String errorUri = serverString + "realms/" + realmString + '/' + factoryID + "/error?error-type=" + errorType;
+        String fedcmPath = session.getContext().getUri().getRequestUri().resolve(".").toString();
+        String errorUri = fedcmPath + "/error?error-type=" + errorType;
 
         Map<String, String> error = new HashMap<>() {{
             put("code", errorType);
@@ -265,9 +271,10 @@ public class FedCMProvider implements RealmResourceProvider {
     }
 
     @POST
-    @Path("disconnect")
+    @Path(ENDPOINTDISCONNECT)
     @Produces(MediaType.APPLICATION_JSON)
     public Response disconnect(@HeaderParam("Origin") String client_origin, @FormParam("client_id") String client_id, @FormParam("account_hint") String account_hint) {
+        // check for the Sec-Fetch-Dest header
         checkRequestHeader();
         RealmModel realm = session.getContext().getRealm();
 
@@ -301,18 +308,13 @@ public class FedCMProvider implements RealmResourceProvider {
                 .build();
     }
 
-    //TODO DELETE
+    //TODO DEAL WITH THIS
     @GET
-    @Path("test")
-    public Response testStatusAPI(@QueryParam("set") boolean set, @HeaderParam("Origin") String client_origin) {
-        if(set)
-            return Response.ok().header("Set-Login", "logged-in")
-                    .header("Access-Control-Allow-Origin", client_origin)
-                    .header("Access-Control-Allow-Credentials", true).type(MediaType.TEXT_PLAIN_TYPE).build();
-        else
-            return Response.ok().header("Set-Login", "logged-out")
-                    .header("Access-Control-Allow-Origin", client_origin)
-                    .header("Access-Control-Allow-Credentials", true).type(MediaType.TEXT_PLAIN_TYPE).build();
+    @Path("logged-out")
+    public Response logoutStatusAPI(@HeaderParam("Origin") String client_origin) {
+        return Response.ok().header("Set-Login", "logged-out")
+            .header("Access-Control-Allow-Origin", client_origin)
+            .header("Access-Control-Allow-Credentials", true).type(MediaType.TEXT_PLAIN_TYPE).build();
     }
 
     @GET
@@ -335,6 +337,7 @@ public class FedCMProvider implements RealmResourceProvider {
     }
 
     private void checkRequestHeader() {
+        // Each FedCM request must contain "Sec-Fetch-Dest: webidentity" header
         List<String> secFetchDest = session.getContext().getRequestHeaders().getRequestHeader("Sec-Fetch-Dest");
         if (secFetchDest.size() != 1 && !secFetchDest.contains("webidentity")) {
             throw new WebApplicationException(Response.Status.BAD_REQUEST);

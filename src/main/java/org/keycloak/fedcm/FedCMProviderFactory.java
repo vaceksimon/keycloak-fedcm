@@ -17,7 +17,7 @@ public class FedCMProviderFactory implements RealmResourceProviderFactory {
 
     @Override
     public RealmResourceProvider create(KeycloakSession session) {
-        return new FedCMProvider(session, ID);
+        return new FedCMProvider(session);
     }
 
     @Override
