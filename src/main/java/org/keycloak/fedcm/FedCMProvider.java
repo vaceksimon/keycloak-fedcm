@@ -7,6 +7,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.keycloak.events.EventBuilder;
@@ -50,10 +51,8 @@ public class FedCMProvider implements RealmResourceProvider {
     @GET
     @Path("config.json")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response fetchConfigFile(@HeaderParam("Sec-Fetch-Dest") String secFetchDest) {
-        if (!secFetchDest.equals("webidentity")) {
-            return Response.status(Response.Status.BAD_REQUEST).build();
-        }
+    public Response fetchConfigFile() {
+        checkRequestHeader();
 
         KeycloakContext keycloakCtx = session.getContext();
         String server = keycloakCtx.getAuthServerUrl().toString();
@@ -67,8 +66,14 @@ public class FedCMProvider implements RealmResourceProvider {
         fedCMEndpoints.put("login_url", server + "realms/" + realm + "/account");
         fedCMEndpoints.put("disconnect_endpoint", server + "realms/" + realm + '/' + factoryID + "/disconnect");
 
+        fedCMEndpoints.put("branding", getBranding());
+        return Response.ok(fedCMEndpoints).type(MediaType.APPLICATION_JSON).build();
+    }
+
+    private Map<String, Object> getBranding() {
         // hardcoded branding options used to change browser's pop-up widget appearance
         Map<String, Object> branding = new HashMap<>();
+
         branding.put("background_color", "#3CC1E6");
         branding.put("color", "black");
         ArrayList<Map<String, Object>> icons = new ArrayList<>();
@@ -78,21 +83,17 @@ public class FedCMProvider implements RealmResourceProvider {
         }});
         branding.put("icons", icons);
         branding.put("name", "Keycloak");
-
-        fedCMEndpoints.put("branding", branding);
-        return Response.ok(fedCMEndpoints).type(MediaType.APPLICATION_JSON).build();
+        return branding;
     }
 
     @GET
     @Path("accounts")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response fetchAccountsList(@HeaderParam("Sec-Fetch-Dest") String secFetchDest) {
+    public Response fetchAccountsList() {
         // todo store somewhere approved_clients
         // todo what to put in domain_hints
+        checkRequestHeader();
 
-        if (!secFetchDest.equals("webidentity")) {
-            return Response.status(Response.Status.BAD_REQUEST).build();
-        }
         AuthResult authResult = (new AuthenticationManager()).authenticateIdentityCookie(session, session.getContext().getRealm());
         if (authResult == null) { // user is probably not authenticated
             return Response.status(Response.Status.FORBIDDEN).build();
@@ -139,10 +140,8 @@ public class FedCMProvider implements RealmResourceProvider {
     @GET
     @Path("client_metadata")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response fetchClientMetadata(@HeaderParam("Sec-Fetch-Dest") String secFetchDest, @QueryParam("client_id") String client_id) {
-        if (!secFetchDest.equals("webidentity")) {
-            return Response.status(Response.Status.BAD_REQUEST).build();
-        }
+    public Response fetchClientMetadata(@QueryParam("client_id") String client_id) {
+        checkRequestHeader();
 
         ClientModel client = session.getContext().getRealm().getClientByClientId(client_id);
         if(client == null) {
@@ -165,15 +164,12 @@ public class FedCMProvider implements RealmResourceProvider {
     @POST
     @Path("id_assert")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response fetchIdentityAssertion(@HeaderParam("Sec-Fetch-Dest") String secFetchDest,
-                                           @HeaderParam("Origin") String origin,
+    public Response fetchIdentityAssertion(@HeaderParam("Origin") String origin,
                                            @FormParam("account_id") String account_id,
                                            @FormParam("client_id") String client_id,
                                            @FormParam("nonce") String nonce,
                                            @QueryParam("disclosure_text_shown") boolean disclosure_text_shown) {
-        if (!secFetchDest.equals("webidentity")) {
-            return Response.status(Response.Status.BAD_REQUEST).build();
-        }
+        checkRequestHeader();
 
         RealmModel realm = session.getContext().getRealm();
 
@@ -271,10 +267,8 @@ public class FedCMProvider implements RealmResourceProvider {
     @POST
     @Path("disconnect")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response disconnect(@HeaderParam("Sec-Fetch-Dest") String secFetchDest, @HeaderParam("Origin") String client_origin, @FormParam("client_id") String client_id, @FormParam("account_hint") String account_hint) {
-        if (!secFetchDest.equals("webidentity")) {
-            return Response.status(Response.Status.BAD_REQUEST).build();
-        }
+    public Response disconnect(@HeaderParam("Origin") String client_origin, @FormParam("client_id") String client_id, @FormParam("account_hint") String account_hint) {
+        checkRequestHeader();
         RealmModel realm = session.getContext().getRealm();
 
         Map<String, String> id = new HashMap<>();
@@ -338,6 +332,13 @@ public class FedCMProvider implements RealmResourceProvider {
                 break;
         }
         return rb.build();
+    }
+
+    private void checkRequestHeader() {
+        List<String> secFetchDest = session.getContext().getRequestHeaders().getRequestHeader("Sec-Fetch-Dest");
+        if (secFetchDest.size() != 1 && !secFetchDest.contains("webidentity")) {
+            throw new WebApplicationException(Response.Status.BAD_REQUEST);
+        }
     }
 
     @Override
