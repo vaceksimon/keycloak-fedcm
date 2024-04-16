@@ -36,6 +36,7 @@ import java.util.Map;
 
 public class FedCMProvider implements RealmResourceProvider {
 
+    // endpoint names
     final String ENDPOINTCONFIG   = "config.json";
     final String ENDPOINTACCOUNTS = "accounts";
     final String ENDPOINTMETADATA = "client_metadata";
@@ -53,6 +54,12 @@ public class FedCMProvider implements RealmResourceProvider {
         return this;
     }
 
+    /**
+     * The config file serves as a discovery device to other FedCM API endpoints provided by Keycloak.
+     * https://fedidcg.github.io/FedCM/#idp-api-config-file
+     *
+     * @return map of Keycloak FedCM configuration convertible to <a href="https://fedidcg.github.io/FedCM/#dictdef-identityproviderapiconfig">IdentityProviderAPIConfig</a>
+     */
     @GET
     @Path(ENDPOINTCONFIG)
     @Produces(MediaType.APPLICATION_JSON)
@@ -77,6 +84,11 @@ public class FedCMProvider implements RealmResourceProvider {
         return Response.ok(fedCMEndpoints).type(MediaType.APPLICATION_JSON).build();
     }
 
+    /**
+     * The accounts endpoint provides an account of a user authenticated with Keycloak
+     *
+     * @return map of user information convertible to <a href="https://fedidcg.github.io/FedCM/#dictdef-identityprovideraccount">IdentityProviderAccount</a>
+     */
     @GET
     @Path(ENDPOINTACCOUNTS)
     @Produces(MediaType.APPLICATION_JSON)
@@ -101,6 +113,13 @@ public class FedCMProvider implements RealmResourceProvider {
         return Response.ok(accList).type(MediaType.APPLICATION_JSON).build();
     }
 
+    /**
+     * The client metadata endpoint provides metadata about a registered client at Keycloak. The client must exist
+     * https://fedidcg.github.io/FedCM/#idp-api-id-assertion-endpoint
+     *
+     * @param client_id
+     * @return map of client metadata convertible to <a href="https://fedidcg.github.io/FedCM/#dictdef-identityproviderclientmetadata">IdentityProviderClientMetadata</a>
+     */
     @GET
     @Path(ENDPOINTMETADATA)
     @Produces(MediaType.APPLICATION_JSON)
@@ -214,26 +233,11 @@ public class FedCMProvider implements RealmResourceProvider {
         return Response.ok(token).type(MediaType.APPLICATION_JSON).build();
     }
 
-    private Response idAssertError(String errorType, Response.Status responseStatus) {
-        // todo Refactor
-        String fedcmPath = session.getContext().getUri().getRequestUri().resolve(".").toString();
-        String errorUri = fedcmPath + "/error?error-type=" + errorType;
-
-        Map<String, String> error = new HashMap<>() {{
-            put("code", errorType);
-            put("url", errorUri);
-        }};
-        return Response.status(responseStatus).entity(new HashMap<>() {{
-                    put("error", error);
-                }})
-                .type(MediaType.APPLICATION_JSON)
-                .build();
-    }
-
     @POST
     @Path(ENDPOINTDISCONNECT)
     @Produces(MediaType.APPLICATION_JSON)
     public Response disconnect(@HeaderParam("Origin") String client_origin, @FormParam("client_id") String client_id, @FormParam("account_hint") String account_hint) {
+        // todo might get back to LogoutEndpint:logout
         // check for the Sec-Fetch-Dest header
         checkRequestHeader();
         RealmModel realm = session.getContext().getRealm();
@@ -268,6 +272,23 @@ public class FedCMProvider implements RealmResourceProvider {
                 .build();
     }
 
+    /**
+     * Returns 400 Bad Request if "Sec-Fetch-Dest: webidentity" was not present in the request
+     *
+     * @throws WebApplicationException
+     */
+    private void checkRequestHeader() {
+        // Each FedCM request must contain "Sec-Fetch-Dest: webidentity" header
+        List<String> secFetchDest = session.getContext().getRequestHeaders().getRequestHeader("Sec-Fetch-Dest");
+        if (secFetchDest.size() != 1 && !secFetchDest.contains("webidentity")) {
+            throw new WebApplicationException(Response.Status.BAD_REQUEST);
+        }
+    }
+
+    /**
+     *
+     * @return map of keycloak branding convertible to <a href="https://fedidcg.github.io/FedCM/#dictdef-identityproviderbranding">IdentityProviderBranding</a>
+     */
     private Map<String, Object> getBranding() {
         // hardcoded branding options used to change browser's pop-up widget appearance
         Map<String, Object> branding = new HashMap<>();
@@ -284,6 +305,11 @@ public class FedCMProvider implements RealmResourceProvider {
         return branding;
     }
 
+    /**
+     *
+     * @param user
+     * @return map of user information convertible to <a href="https://fedidcg.github.io/FedCM/#dictdef-identityprovideraccount">IdentityProviderAccount</a>
+     */
     private Map<String, Object> getUserAccount(UserModel user) {
         Map<String, Object> account = new HashMap<>();
         account.put("id", user.getId());
@@ -298,13 +324,20 @@ public class FedCMProvider implements RealmResourceProvider {
         return account;
     }
 
-    //TODO DEAL WITH THIS
-    @GET
-    @Path("logged-out")
-    public Response logoutStatusAPI(@HeaderParam("Origin") String client_origin) {
-        return Response.ok().header("Set-Login", "logged-out")
-            .header("Access-Control-Allow-Origin", client_origin)
-            .header("Access-Control-Allow-Credentials", true).type(MediaType.TEXT_PLAIN_TYPE).build();
+    private Response idAssertError(String errorType, Response.Status responseStatus) {
+        // todo Refactor
+        String fedcmPath = session.getContext().getUri().getRequestUri().resolve(".").toString();
+        String errorUri = fedcmPath + "/error?error-type=" + errorType;
+
+        Map<String, String> error = new HashMap<>() {{
+            put("code", errorType);
+            put("url", errorUri);
+        }};
+        return Response.status(responseStatus).entity(new HashMap<>() {{
+                    put("error", error);
+                }})
+                .type(MediaType.APPLICATION_JSON)
+                .build();
     }
 
     @GET
@@ -326,13 +359,16 @@ public class FedCMProvider implements RealmResourceProvider {
         return rb.build();
     }
 
-    private void checkRequestHeader() {
-        // Each FedCM request must contain "Sec-Fetch-Dest: webidentity" header
-        List<String> secFetchDest = session.getContext().getRequestHeaders().getRequestHeader("Sec-Fetch-Dest");
-        if (secFetchDest.size() != 1 && !secFetchDest.contains("webidentity")) {
-            throw new WebApplicationException(Response.Status.BAD_REQUEST);
-        }
+
+    //TODO DEAL WITH THIS
+    @GET
+    @Path("logged-out")
+    public Response logoutStatusAPI(@HeaderParam("Origin") String client_origin) {
+        return Response.ok().header("Set-Login", "logged-out")
+            .header("Access-Control-Allow-Origin", client_origin)
+            .header("Access-Control-Allow-Credentials", true).type(MediaType.TEXT_PLAIN_TYPE).build();
     }
+
 
     @Override
     public void close() {
