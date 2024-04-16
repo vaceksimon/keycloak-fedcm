@@ -108,14 +108,16 @@ public class FedCMProvider implements RealmResourceProvider {
         // check for the Sec-Fetch-Dest header
         checkRequestHeader();
 
+        // get client from registered in a realm
         ClientModel client = session.getContext().getRealm().getClientByClientId(client_id);
         if(client == null) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
 
+        // prepare a JSON with client metadata saved during client registration
         RoleModel role = client.getRole("policies");
-        if (role == null) {
-           return Response.serverError().build();
+        if (role == null) { // no policies returned is a valid response
+           return Response.ok().type(MediaType.APPLICATION_JSON).build();
         }
 
         Map<String, String> metadata = new HashMap<>();
