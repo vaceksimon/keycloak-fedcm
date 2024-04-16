@@ -77,22 +77,6 @@ public class FedCMProvider implements RealmResourceProvider {
         return Response.ok(fedCMEndpoints).type(MediaType.APPLICATION_JSON).build();
     }
 
-    private Map<String, Object> getBranding() {
-        // hardcoded branding options used to change browser's pop-up widget appearance
-        Map<String, Object> branding = new HashMap<>();
-
-        branding.put("background_color", "#3CC1E6");
-        branding.put("color", "black");
-        ArrayList<Map<String, Object>> icons = new ArrayList<>();
-        icons.add(new HashMap<>() {{
-            put("url", "https://raw.githubusercontent.com/keycloak/keycloak-misc/main/archive/logo/keycloak_icon_32px.png");
-            put("size", 32);
-        }});
-        branding.put("icons", icons);
-        branding.put("name", "Keycloak");
-        return branding;
-    }
-
     @GET
     @Path(ENDPOINTACCOUNTS)
     @Produces(MediaType.APPLICATION_JSON)
@@ -100,45 +84,19 @@ public class FedCMProvider implements RealmResourceProvider {
         // check for the Sec-Fetch-Dest header
         checkRequestHeader();
 
+        // with the cookies sent in the request and kept in KeycloakContext get authentication information
         AuthResult authResult = (new AuthenticationManager()).authenticateIdentityCookie(session, session.getContext().getRealm());
         if (authResult == null) { // user is probably not authenticated
             return Response.status(Response.Status.FORBIDDEN).build();
         }
 
-        UserModel userModel = authResult.getUser();
-        Map<String, Object> acc = new HashMap<>();
-        acc.put("id", userModel.getId());
-        acc.put("given_name", userModel.getFirstName());
-        acc.put("name", userModel.getFirstName() + ' ' + userModel.getLastName());
-        acc.put("email", userModel.getEmail());
-        String picture = userModel.getFirstAttribute("picture");
-        if (picture != null) {
-            acc.put("picture", picture);
-        }
-        acc.put("approved_clients", userModel.getAttributeStream("approved_clients").toList());
-        acc.put("login_hints", new ArrayList<String>() {{
-            add(userModel.getEmail());
-        }});
+        // prepare a JSON with user account information
+        UserModel user = authResult.getUser();
+        Map<String, Object> account = getUserAccount(user);
 
-        // TODO DELETE second and madeup account just for demonstration purposes in the browser's pop-up widget
-        Map<String, Object> acc2 = new HashMap<>();
-        acc2.put("id", "1111");
-        acc2.put("given_name", "Radek");
-        acc2.put("name", "Radek Burget");
-        acc2.put("email", "burgetr@fit.vut.cz");
-        acc2.put("picture", "https://www.fit.vut.cz/person-photo/10467/?transparent=1");
-        acc2.put("approved_clients", new ArrayList<String>() {{
-            add("123");
-            add("456");
-        }});
-        acc2.put("login_hints", new ArrayList<String>() {{
-            add("burgetr@fit.vut.cz");
-        }});
-
-        Map<String, Object> accList = new HashMap<>();
+       Map<String, Object> accList = new HashMap<>();
         accList.put("accounts", new ArrayList<>() {{
-            add(acc);
-            add(acc2);
+            add(account);
         }});
         return Response.ok(accList).type(MediaType.APPLICATION_JSON).build();
     }
@@ -306,6 +264,36 @@ public class FedCMProvider implements RealmResourceProvider {
                 .header("Set-Login", "logged-out")
                 .type(MediaType.APPLICATION_JSON)
                 .build();
+    }
+
+    private Map<String, Object> getBranding() {
+        // hardcoded branding options used to change browser's pop-up widget appearance
+        Map<String, Object> branding = new HashMap<>();
+
+        branding.put("background_color", "#3CC1E6");
+        branding.put("color", "black");
+        ArrayList<Map<String, Object>> icons = new ArrayList<>();
+        icons.add(new HashMap<>() {{
+            put("url", "https://raw.githubusercontent.com/keycloak/keycloak-misc/main/archive/logo/keycloak_icon_32px.png");
+            put("size", 32);
+        }});
+        branding.put("icons", icons);
+        branding.put("name", "Keycloak");
+        return branding;
+    }
+
+    private Map<String, Object> getUserAccount(UserModel user) {
+        Map<String, Object> account = new HashMap<>();
+        account.put("id", user.getId());
+        account.put("given_name", user.getFirstName());
+        account.put("name", user.getFirstName() + ' ' + user.getLastName());
+        account.put("email", user.getEmail());
+        account.put("picture", user.getFirstAttribute("picture"));
+        account.put("approved_clients", user.getAttributeStream("approved_clients").toList());
+        account.put("login_hints", new ArrayList<String>() {{
+            add(user.getEmail());
+        }});
+        return account;
     }
 
     //TODO DEAL WITH THIS
