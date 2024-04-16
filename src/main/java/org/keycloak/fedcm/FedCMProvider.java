@@ -13,7 +13,6 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
-import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -21,6 +20,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthResult;
 import org.keycloak.services.managers.AuthenticationSessionManager;
@@ -37,11 +37,36 @@ import java.util.Map;
 public class FedCMProvider implements RealmResourceProvider {
 
     // endpoint names
-    final String ENDPOINTCONFIG   = "config.json";
-    final String ENDPOINTACCOUNTS = "accounts";
-    final String ENDPOINTMETADATA = "client_metadata";
-    final String ENDPOINTIDASSERT = "id_assert";
+    final String ENDPOINTCONFIG     = "config.json";
+    final String ENDPOINTACCOUNTS   = "accounts";
+    final String ENDPOINTMETADATA   = "client_metadata";
+    final String ENDPOINTIDASSERT   = "id_assert";
     final String ENDPOINTDISCONNECT = "disconnect";
+
+    /**
+     * Values representing some of the Error responses
+     * @see <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.2.1">OAuth 2.0 Error Response</a>
+     */
+    private enum ErrorTypes {
+        unauthorized_client,
+        access_denied,
+        invalid_request;
+
+        /**
+         * @return a status code corresponding to the error type
+         */
+        public Response.Status getResponse() {
+            if (this == unauthorized_client) {
+                return Response.Status.UNAUTHORIZED;
+            }
+            else if (this == access_denied) {
+                return Response.Status.FORBIDDEN;
+            }
+            else {
+                return Response.Status.BAD_REQUEST;
+            }
+        }
+    }
 
     private final KeycloakSession session;
 
@@ -147,6 +172,17 @@ public class FedCMProvider implements RealmResourceProvider {
 
     }
 
+    /**
+     * The Identity Assertion endpoint verifies authenticated user, and generates an access token for a client.
+     *
+     * @param origin client origin
+     * @param account_id id of a chosen authenticated user
+     * @param client_id
+     * @param nonce client request nonce
+     * @param disclosure_text_shown whether user agent showed user which information will be shared with client
+     * @return Encoded Access token convertible to <a href="https://fedidcg.github.io/FedCM/#dictdef-identityprovidertoken">IdentityProviderToken</a>
+     * @see AccessTokenResponse#getToken() AccessTokenResponse#getToken()
+     */
     @POST
     @Path(ENDPOINTIDASSERT)
     @Produces(MediaType.APPLICATION_JSON)
@@ -159,71 +195,55 @@ public class FedCMProvider implements RealmResourceProvider {
         checkRequestHeader();
 
         RealmModel realm = session.getContext().getRealm();
-
         ClientModel client = realm.getClientByClientId(client_id);
-        if(client == null) {
-            return idAssertError("unauthorized_client", Response.Status.UNAUTHORIZED);
+        if(client == null) { // client must be registered in Keycloak
+            return idAssertError(ErrorTypes.unauthorized_client);
         }
 
-
-        //todo parse origin
-        if (!client.getRootUrl().equals(origin)) {
-            return idAssertError("unauthorized_client", Response.Status.UNAUTHORIZED);
+        if (!client.getRootUrl().equals(origin)) { // ensure the token is sent to the right client
+            return idAssertError(ErrorTypes.unauthorized_client);
         }
 
-        // todo is this the right way to do it?
         session.getContext().setClient(client);
 
-        // todo might not be necessary and tokenManager.responseBuilder could be supplied with null instead of EventBuilder
-        EventBuilder eventBuilder = new EventBuilder(realm, session);
-
+        // with the cookies sent in the request and kept in KeycloakContext get authentication information
         AuthResult authResult = new AuthenticationManager().authenticateIdentityCookie(session, realm);
-        if (authResult == null) {
-            return idAssertError("access_denied", Response.Status.FORBIDDEN);
+        if (authResult == null) { // user is probably not authenticated
+            return idAssertError(ErrorTypes.access_denied);
         }
 
         UserModel user = authResult.getUser();
-        if (!user.getId().equals(account_id)) {
-            return idAssertError("invalid_request", Response.Status.BAD_REQUEST);
+        if (!user.getId().equals(account_id)) { // the request user id must match a Keycloak user id
+            return idAssertError(ErrorTypes.invalid_request);
         }
-        UserSessionModel userSession = authResult.getSession();
 
-
-        // creating a ClientAuthenticatedSession used for ClientSessionContext
+        // create a new authentication session for a user and a client
         AuthenticationSessionManager authSessionManager = new AuthenticationSessionManager(session);
-        RootAuthenticationSessionModel rootAuthSession = authSessionManager.createAuthenticationSession(realm, false);
-        // AuthenticationSessionAdapter
+        RootAuthenticationSessionModel rootAuthSession = authSessionManager.createAuthenticationSession(realm, true);
         AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(client);
         authSession.setAuthenticatedUser(user);
-        authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, "openid profile email");
 
+        // scopes which the client wants access to
+        authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, "openid profile email");
         AuthenticationManager.setClientScopesInSession(authSession);
 
-
-        // DefaultClientSessionContext
+        // set the client nonce to be included in the token
+        UserSessionModel userSession = authResult.getSession();
         ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(session, userSession, authSession);
-        // 1) set nonce
-        // todo should be set in the AuthenticationSessionModel - OIDCLoginProtocol:authenticated():230
         authSession.setClientNote(OIDCLoginProtocol.NONCE_PARAM, nonce);
         clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, nonce);
 
-
+        // generate a token
+        EventBuilder eventBuilder = new EventBuilder(realm, session);
         TokenManager tokenManager = new TokenManager();
-
-
         TokenManager.AccessTokenResponseBuilder accessTokenResponseBuilder = tokenManager.responseBuilder(realm, client, eventBuilder, session, userSession, clientSessionCtx);
         accessTokenResponseBuilder.generateAccessToken();
-        accessTokenResponseBuilder.generateIDToken();
 
-
+        // prepare a JSON with token
         Map<String, String> token = new HashMap<>();
-        if (client_id.equals("example-idtoken")) {
-            token.put("token", accessTokenResponseBuilder.build().getIdToken());
-        } else if (client_id.equals("example-accesstoken")) {
-            token.put("token", accessTokenResponseBuilder.build().getToken());
-        } else {
-            return idAssertError("unauthorized_client", Response.Status.UNAUTHORIZED);
-        }
+        token.put("token", accessTokenResponseBuilder.build().getToken());
+
+        // authentication successful with user consent, the client is approved for future fedcm login
         List<String> approvedClients = new ArrayList<>(user.getAttributeStream("approved_clients").toList());
         if (!approvedClients.contains(client_id)) {
             approvedClients.add(client_id);
@@ -324,36 +344,53 @@ public class FedCMProvider implements RealmResourceProvider {
         return account;
     }
 
-    private Response idAssertError(String errorType, Response.Status responseStatus) {
-        // todo Refactor
+    /**
+     * Notifies a browser about an encountered error when generating a token.
+     * Leverages the <a href="https://developers.google.com/privacy-sandbox/blog/fedcm-chrome-120-updates?hl=en#error-api">FedCM Error API</a>
+     *
+     * @param errorType one of the <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.2.1">OAuth error responses</a>
+     * @return response to the FedCM Error API of a user agent
+     */
+    private Response idAssertError(ErrorTypes errorType) {
         String fedcmPath = session.getContext().getUri().getRequestUri().resolve(".").toString();
-        String errorUri = fedcmPath + "/error?error-type=" + errorType;
+        // uri with error details
+        String errorUri = fedcmPath + "/error?error-type=" + errorType.toString();
 
+        // prepare a JSON with error details
         Map<String, String> error = new HashMap<>() {{
-            put("code", errorType);
+            put("code", errorType.toString());
             put("url", errorUri);
         }};
-        return Response.status(responseStatus).entity(new HashMap<>() {{
+        return Response
+                .status(errorType.getResponse())
+                .entity(new HashMap<>() {{
                     put("error", error);
                 }})
                 .type(MediaType.APPLICATION_JSON)
                 .build();
     }
 
+    /**
+     * Redirects to Keycloak documentation with more information about an error encountered when generating a token.
+     *
+     * @param error_type one of the <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.2.1">OAuth error responses</a>
+     * @return a 302 redirect response to Keycloak documentation
+     */
     @GET
     @Path("error")
     @Produces(MediaType.APPLICATION_JSON)
     public Response errorRedirector(@QueryParam("error-type") String error_type) {
+        ErrorTypes enumErrorType = ErrorTypes.valueOf(error_type);
         Response.ResponseBuilder rb = Response.status(Response.Status.FOUND);
-        switch (error_type) {
-            case "unauthorized_client":
-                rb.location(java.net.URI.create("https://www.keycloak.org/getting-started/getting-started-zip#_secure_the_first_application"));
+        switch (enumErrorType) {
+            case unauthorized_client:
+                rb.location(URI.create("https://www.keycloak.org/getting-started/getting-started-zip#_secure_the_first_application"));
                 break;
-            case "access_denied":
-                rb.location(java.net.URI.create("https://www.keycloak.org/getting-started/getting-started-zip#_log_in_to_the_admin_console"));
+            case access_denied:
+                rb.location(URI.create("https://www.keycloak.org/getting-started/getting-started-zip#_log_in_to_the_admin_console"));
                 break;
-            case "invalid_request":
-                rb.location(java.net.URI.create("https://www.youtube.com/watch?v=mPEdQjH5nFw"));
+            case invalid_request:
+                rb.location(URI.create("https://www.keycloak.org/guides#getting-started"));
                 break;
         }
         return rb.build();
