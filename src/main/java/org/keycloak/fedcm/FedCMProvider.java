@@ -149,7 +149,7 @@ public class FedCMProvider implements RealmResourceProvider {
     @GET
     @Path(ENDPOINTMETADATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response fetchClientMetadata(@QueryParam("client_id") String client_id) {
+    public Response fetchClientMetadata(@HeaderParam("Origin") String origin, @QueryParam("client_id") String client_id) {
         // check for the Sec-Fetch-Dest header
         checkRequestHeader();
 
@@ -157,6 +157,9 @@ public class FedCMProvider implements RealmResourceProvider {
         ClientModel client = session.getContext().getRealm().getClientByClientId(client_id);
         if(client == null) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
+        }
+        if (!client.getRootUrl().equals(origin)) { // ensure client origin matches the registered origin
+            return idAssertError(ErrorTypes.unauthorized_client);
         }
 
         // prepare a JSON with client metadata saved during client registration
@@ -257,27 +260,31 @@ public class FedCMProvider implements RealmResourceProvider {
     /**
      * The Disconnect endpoint logs out a user from a client authenticated with FedCM
      *
-     * @param client_origin client origin
+     * @param origin client origin
      * @param client_id
      * @return id of the user signed in to Keycloak
      */
     @POST
     @Path(ENDPOINTDISCONNECT)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response disconnect(@HeaderParam("Origin") String client_origin, @FormParam("client_id") String client_id) {
+    public Response disconnect(@HeaderParam("Origin") String origin, @FormParam("client_id") String client_id) {
         // check for the Sec-Fetch-Dest header
         checkRequestHeader();
 
-        // with the cookies sent in the request and kept in KeycloakContext get authentication information
         RealmModel realm = session.getContext().getRealm();
-        AuthResult authResult = (new AuthenticationManager()).authenticateIdentityCookie(session, realm);
-        if (authResult == null) { // user is probably not authenticated
-            return Response.status(Response.Status.FORBIDDEN).build();
-        }
-
         ClientModel client = realm.getClientByClientId(client_id);
         if (client == null) { // client must be registered in Keycloak
             return Response.status(Response.Status.UNAUTHORIZED).build();
+        }
+        if (!client.getRootUrl().equals(origin)) { // ensure client origin matches the registered origin
+            return idAssertError(ErrorTypes.unauthorized_client);
+        }
+
+        // with the cookies sent in the request and kept in KeycloakContext get authentication information
+
+        AuthResult authResult = (new AuthenticationManager()).authenticateIdentityCookie(session, realm);
+        if (authResult == null) { // user is probably not authenticated
+            return Response.status(Response.Status.FORBIDDEN).build();
         }
 
         // remove user client session and therefore logout user from client
@@ -290,7 +297,7 @@ public class FedCMProvider implements RealmResourceProvider {
         id.put("account_id", userModel.getId());
 
         return Response.ok(id)
-                .header("Access-Control-Allow-Origin", client_origin)
+                .header("Access-Control-Allow-Origin", origin)
                 .header("Access-Control-Allow-Credentials", true)
                 .type(MediaType.APPLICATION_JSON)
                 .build();
