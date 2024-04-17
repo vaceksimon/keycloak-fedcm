@@ -82,7 +82,7 @@ public class FedCMProvider implements RealmResourceProvider {
 
     /**
      * The config file serves as a discovery device to other FedCM API endpoints provided by Keycloak.
-     * https://fedidcg.github.io/FedCM/#idp-api-config-file
+     * @see <a href="https://fedidcg.github.io/FedCM/#idp-api-config-file">FedCM API The Config File endpoint</a>
      *
      * @return map of Keycloak FedCM configuration convertible to <a href="https://fedidcg.github.io/FedCM/#dictdef-identityproviderapiconfig">IdentityProviderAPIConfig</a>
      */
@@ -112,6 +112,7 @@ public class FedCMProvider implements RealmResourceProvider {
 
     /**
      * The accounts endpoint provides an account of a user authenticated with Keycloak
+     * @see <a href="https://fedidcg.github.io/FedCM/#idp-api-accounts-endpoint">FedCM API Accounts endpoint</a>
      *
      * @return map of user information convertible to <a href="https://fedidcg.github.io/FedCM/#dictdef-identityprovideraccount">IdentityProviderAccount</a>
      */
@@ -133,15 +134,13 @@ public class FedCMProvider implements RealmResourceProvider {
         Map<String, Object> account = getUserAccount(user);
 
        Map<String, Object> accList = new HashMap<>();
-        accList.put("accounts", new ArrayList<>() {{
-            add(account);
-        }});
+        accList.put("accounts", List.of(account));
         return Response.ok(accList).type(MediaType.APPLICATION_JSON).build();
     }
 
     /**
      * The client metadata endpoint provides metadata about a registered client at Keycloak. The client must exist
-     * https://fedidcg.github.io/FedCM/#idp-api-id-assertion-endpoint
+     * @see <a href="https://fedidcg.github.io/FedCM/#idp-api-client-id-metadata-endpoint">FedCM API Client Metadata endpoint</a>
      *
      * @param client_id
      * @return map of client metadata convertible to <a href="https://fedidcg.github.io/FedCM/#dictdef-identityproviderclientmetadata">IdentityProviderClientMetadata</a>
@@ -178,6 +177,7 @@ public class FedCMProvider implements RealmResourceProvider {
 
     /**
      * The Identity Assertion endpoint verifies authenticated user, and generates an access token for a client.
+     * @see <a href="https://fedidcg.github.io/FedCM/#idp-api-id-assertion-endpoint">FedCM API Identity assertion endpoint</a>
      *
      * @param origin client origin
      * @param account_id id of a chosen authenticated user
@@ -243,10 +243,6 @@ public class FedCMProvider implements RealmResourceProvider {
         TokenManager.AccessTokenResponseBuilder accessTokenResponseBuilder = tokenManager.responseBuilder(realm, client, eventBuilder, session, userSession, clientSessionCtx);
         accessTokenResponseBuilder.generateAccessToken();
 
-        // prepare a JSON with token
-        Map<String, String> token = new HashMap<>();
-        token.put("token", accessTokenResponseBuilder.build().getToken());
-
         // authentication successful with user consent, the client is approved for future fedcm login
         List<String> approvedClients = new ArrayList<>(user.getAttributeStream("approved_clients").toList());
         if (!approvedClients.contains(client_id)) {
@@ -254,11 +250,13 @@ public class FedCMProvider implements RealmResourceProvider {
             user.setAttribute("approved_clients", approvedClients);
         }
 
-        return Response.ok(token).type(MediaType.APPLICATION_JSON).build();
+        return Response.ok(Map.of("token", accessTokenResponseBuilder.build().getToken()))
+                .type(MediaType.APPLICATION_JSON).build();
     }
 
     /**
      * The Disconnect endpoint logs out a user from a client authenticated with FedCM
+     * @see <a href="https://fedidcg.github.io/FedCM/#idp-api-disconnect-endpoint">FedCM API Disconnect endpoint</a>
      *
      * @param origin client origin
      * @param client_id
@@ -293,10 +291,8 @@ public class FedCMProvider implements RealmResourceProvider {
 
         // prepare a JSON with user id
         UserModel userModel = authResult.getUser();
-        Map<String, String> id = new HashMap<>();
-        id.put("account_id", userModel.getId());
 
-        return Response.ok(id)
+        return Response.ok(Map.of("account_id", userModel.getId()))
                 .header("Access-Control-Allow-Origin", origin)
                 .header("Access-Control-Allow-Credentials", true)
                 .type(MediaType.APPLICATION_JSON)
@@ -349,9 +345,7 @@ public class FedCMProvider implements RealmResourceProvider {
         account.put("email", user.getEmail());
         account.put("picture", user.getFirstAttribute("picture"));
         account.put("approved_clients", user.getAttributeStream("approved_clients").toList());
-        account.put("login_hints", new ArrayList<String>() {{
-            add(user.getEmail());
-        }});
+        account.put("login_hints", List.of(user.getEmail()));
         return account;
     }
 
@@ -374,9 +368,7 @@ public class FedCMProvider implements RealmResourceProvider {
         }};
         return Response
                 .status(errorType.getResponse())
-                .entity(new HashMap<>() {{
-                    put("error", error);
-                }})
+                .entity( Map.of("error", error))
                 .type(MediaType.APPLICATION_JSON)
                 .build();
     }

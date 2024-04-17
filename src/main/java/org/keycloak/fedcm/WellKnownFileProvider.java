@@ -25,12 +25,11 @@ public class WellKnownFileProvider implements RootResourceProvider {
     @Path("web-identity")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getWellKnownFile(@HeaderParam("Sec-Fetch-Dest") String secFetchDest) {
-        Map<String, Object> providerUrls = new HashMap<>();
         if (!secFetchDest.equals("webidentity")) {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
 
-        //todo in the next iteration, well-known file will be realm based and acting as eTLD+1; remove hard-coded realm
+        Map<String, Object> providerUrls = new HashMap<>();
         providerUrls.put("provider_urls", List.of("http://localhost:8080/realms/fedcm-realm/fedcm/config.json"));
         return Response.ok(providerUrls).type(MediaType.APPLICATION_JSON).build();
     }
