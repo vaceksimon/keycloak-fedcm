@@ -17,6 +17,8 @@ public class WellKnownFileProvider implements RootResourceProvider {
 
     private final KeycloakSession session;
 
+    private final String configPath = "realms/fedcm-realm/fedcm/" + FedCMUtils.ENDPOINTCONFIG;
+
     public WellKnownFileProvider(KeycloakSession session) {
         this.session = session;
     }
@@ -29,8 +31,10 @@ public class WellKnownFileProvider implements RootResourceProvider {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
 
+        String baseUri = session.getContext().getUri().getBaseUri().toString();
+
         Map<String, Object> providerUrls = new HashMap<>();
-        providerUrls.put("provider_urls", List.of("http://localhost:8080/realms/fedcm-realm/fedcm/config.json"));
+        providerUrls.put("provider_urls", List.of(baseUri + configPath));
         return Response.ok(providerUrls).type(MediaType.APPLICATION_JSON).build();
     }
 
