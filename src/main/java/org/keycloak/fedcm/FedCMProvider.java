@@ -254,37 +254,44 @@ public class FedCMProvider implements RealmResourceProvider {
         return Response.ok(token).type(MediaType.APPLICATION_JSON).build();
     }
 
+    /**
+     * The Disconnect endpoint logs out a user from a client authenticated with FedCM
+     *
+     * @param client_origin client origin
+     * @param client_id
+     * @return id of the user signed in to Keycloak
+     */
     @POST
     @Path(ENDPOINTDISCONNECT)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response disconnect(@HeaderParam("Origin") String client_origin, @FormParam("client_id") String client_id, @FormParam("account_hint") String account_hint) {
-        // todo might get back to LogoutEndpint:logout
+    public Response disconnect(@HeaderParam("Origin") String client_origin, @FormParam("client_id") String client_id) {
         // check for the Sec-Fetch-Dest header
         checkRequestHeader();
-        RealmModel realm = session.getContext().getRealm();
 
-        Map<String, String> id = new HashMap<>();
+        // with the cookies sent in the request and kept in KeycloakContext get authentication information
+        RealmModel realm = session.getContext().getRealm();
         AuthResult authResult = (new AuthenticationManager()).authenticateIdentityCookie(session, realm);
-        if (authResult == null) {
+        if (authResult == null) { // user is probably not authenticated
             return Response.status(Response.Status.FORBIDDEN).build();
         }
 
-        UserSessionModel userSession = authResult.getSession();
         ClientModel client = realm.getClientByClientId(client_id);
-        if (client == null) {
+        if (client == null) { // client must be registered in Keycloak
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
 
-        UserModel userModel = authResult.getUser();
+        // remove user client session and therefore logout user from client
+        UserSessionModel userSession = authResult.getSession();
         userSession.removeAuthenticatedClientSessions(new LinkedList<>() {{add(client.getId());}});
-        id.put("account_id", userModel.getId());
 
+        // prepare a JSON with user id
+        UserModel userModel = authResult.getUser();
+        Map<String, String> id = new HashMap<>();
+        id.put("account_id", userModel.getId());
 
         return Response.ok(id)
                 .header("Access-Control-Allow-Origin", client_origin)
                 .header("Access-Control-Allow-Credentials", true)
-                .header("Access-Control-Allow-Headers", "Content-Type, Set-Login")
-                .header("Set-Login", "logged-out")
                 .type(MediaType.APPLICATION_JSON)
                 .build();
     }
@@ -392,17 +399,6 @@ public class FedCMProvider implements RealmResourceProvider {
         }
         return rb.build();
     }
-
-
-    //TODO DEAL WITH THIS
-    @GET
-    @Path("logged-out")
-    public Response logoutStatusAPI(@HeaderParam("Origin") String client_origin) {
-        return Response.ok().header("Set-Login", "logged-out")
-            .header("Access-Control-Allow-Origin", client_origin)
-            .header("Access-Control-Allow-Credentials", true).type(MediaType.TEXT_PLAIN_TYPE).build();
-    }
-
 
     @Override
     public void close() {
