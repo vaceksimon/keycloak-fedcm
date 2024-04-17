@@ -43,26 +43,6 @@ async function logout() {
 	    document.getElementById('status').innerHTML="Logout was successful";
 	    document.getElementById('message').innerHTML="";
 		document.getElementById('error').innerHTML="";
-
-        // TODO get rid off
-        // Use the fetch API to send a GET request
-        fetch("http://localhost:8080/realms/fedcm-realm/fedcm/logged-out")
-          .then(response => {
-            // Check if the request was successful
-            if (!response.ok) {
-                throw new Error('Network response was not ok: ' + response.statusText);
-            }
-            return response.text(); // or .text() if the response is text and not JSON
-          })
-          .then(data => {
-            // Handle the response data
-            console.log(data);
-          })
-          .catch(error => {
-            // Handle any errors
-            console.error('There was a problem with the fetch operation:', error);
-          });
-
 	}
 	catch(e) {
 		document.getElementById('error').innerHTML="Error during logout :(";

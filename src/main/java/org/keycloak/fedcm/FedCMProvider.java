@@ -31,6 +31,7 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -268,18 +269,14 @@ public class FedCMProvider implements RealmResourceProvider {
             return Response.status(Response.Status.FORBIDDEN).build();
         }
 
-        // PERFORM ACTUAL KEYCLOAK LOGOUT
         UserSessionModel userSession = authResult.getSession();
-        userSession.setNote(AuthenticationManager.KEYCLOAK_LOGOUT_PROTOCOL, OIDCLoginProtocol.LOGIN_PROTOCOL);
         ClientModel client = realm.getClientByClientId(client_id);
         if (client == null) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
 
-        AuthenticationManager.browserLogout(session, realm, userSession, session.getContext().getUri(), session.getContext().getConnection(), session.getContext().getRequestHeaders());
-
-
         UserModel userModel = authResult.getUser();
+        userSession.removeAuthenticatedClientSessions(new LinkedList<>() {{add(client.getId());}});
         id.put("account_id", userModel.getId());
 
 
