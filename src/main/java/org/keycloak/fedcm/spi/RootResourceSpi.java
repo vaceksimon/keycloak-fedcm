@@ -3,10 +3,13 @@ package org.keycloak.fedcm.spi;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
-import org.keycloak.fedcm.spi.RootResourceProvider;
-import org.keycloak.fedcm.spi.RootResourceProviderFactory;
 
-public class RootResourceSPI implements Spi {
+/**
+ * A custom Spi registering the Root extension for RESTful endpoints.
+ *
+ * @author <a href="mailto:xvacek10@stud.fit.vutbr.cz">Simon Vacek</a>
+ */
+public class RootResourceSpi implements Spi {
     @Override
     public boolean isInternal() {
         return true;

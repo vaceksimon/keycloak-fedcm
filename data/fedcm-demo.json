@@ -1376,7 +1376,7 @@
       "subType" : "anonymous",
       "subComponents" : { },
       "config" : {
-        "allowed-protocol-mapper-types" : [ "oidc-usermodel-property-mapper", "saml-user-property-mapper", "oidc-address-mapper", "saml-role-list-mapper", "oidc-sha256-pairwise-sub-mapper", "oidc-full-name-mapper", "saml-user-attribute-mapper", "oidc-usermodel-attribute-mapper" ]
+        "allowed-protocol-mapper-types" : [ "oidc-usermodel-attribute-mapper", "oidc-address-mapper", "saml-user-attribute-mapper", "oidc-usermodel-property-mapper", "oidc-full-name-mapper", "oidc-sha256-pairwise-sub-mapper", "saml-role-list-mapper", "saml-user-property-mapper" ]
       }
     }, {
       "id" : "09060be2-04f4-4944-b68e-921f5009c77b",
@@ -1385,7 +1385,7 @@
       "subType" : "authenticated",
       "subComponents" : { },
       "config" : {
-        "allowed-protocol-mapper-types" : [ "oidc-address-mapper", "saml-role-list-mapper", "saml-user-property-mapper", "oidc-usermodel-property-mapper", "oidc-full-name-mapper", "saml-user-attribute-mapper", "oidc-usermodel-attribute-mapper", "oidc-sha256-pairwise-sub-mapper" ]
+        "allowed-protocol-mapper-types" : [ "oidc-full-name-mapper", "saml-user-attribute-mapper", "oidc-sha256-pairwise-sub-mapper", "oidc-usermodel-attribute-mapper", "saml-user-property-mapper", "saml-role-list-mapper", "oidc-usermodel-property-mapper", "oidc-address-mapper" ]
       }
     } ],
     "org.keycloak.userprofile.UserProfileProvider" : [ {
@@ -2256,7 +2256,7 @@
         "containerId" : "ed66a78e-0082-4768-a832-8340bfd09159",
         "attributes" : { }
       } ],
-      "example-idtoken" : [ {
+      "example-client" : [ {
         "id" : "0d20728f-daab-4890-b09d-6633e48dd07b",
         "name" : "policies",
         "description" : "Privacy Policy and Terms of Service",
@@ -2270,18 +2270,6 @@
       } ],
       "security-admin-console" : [ ],
       "admin-cli" : [ ],
-      "example-accesstoken" : [ {
-        "id" : "ca9953ab-f78a-442b-a848-1ab74a6f2fa5",
-        "name" : "policies",
-        "description" : "Privacy Policy and Terms of Service",
-        "composite" : false,
-        "clientRole" : true,
-        "containerId" : "d89f8778-fb6c-4033-bac4-87162b802112",
-        "attributes" : {
-          "privacy-policy" : [ "http://localhost:8081/privacy-policy.html" ],
-          "terms-of-service" : [ "http://localhost:8081/terms-of-service.html" ]
-        }
-      } ],
       "account-console" : [ ],
       "broker" : [ {
         "id" : "9fc9be1f-2aeb-4d20-a7f8-bf71224007df",
@@ -2418,6 +2406,7 @@
     "email" : "xvacek10@stud.fit.vutbr.cz",
     "emailVerified" : true,
     "attributes" : {
+      "approved_clients" : [ ],
       "picture" : [ "https://media.licdn.com/dms/image/C4E03AQF6EEKo19spIg/profile-displayphoto-shrink_800_800/0/1645993789821?e=2147483647&v=beta&t=YE-E0c3pZM4SIP0tgnjina_Iy43LHGAR3P3U10dw0MU" ]
     },
     "createdTimestamp" : 1712675631874,
@@ -2573,8 +2562,8 @@
     "defaultClientScopes" : [ "web-origins", "acr", "roles", "profile", "email" ],
     "optionalClientScopes" : [ "address", "phone", "offline_access", "microprofile-jwt" ]
   }, {
-    "id" : "d89f8778-fb6c-4033-bac4-87162b802112",
-    "clientId" : "example-accesstoken",
+    "id" : "89528c8b-22f4-4147-8895-98cc02c6a44c",
+    "clientId" : "example-client",
     "name" : "",
     "description" : "",
     "rootUrl" : "http://localhost:8081",
@@ -2585,44 +2574,7 @@
     "alwaysDisplayInConsole" : false,
     "clientAuthenticatorType" : "client-secret",
     "redirectUris" : [ "" ],
-    "webOrigins" : [ "http://localhost:8081" ],
-    "notBefore" : 0,
-    "bearerOnly" : false,
-    "consentRequired" : false,
-    "standardFlowEnabled" : true,
-    "implicitFlowEnabled" : false,
-    "directAccessGrantsEnabled" : false,
-    "serviceAccountsEnabled" : false,
-    "publicClient" : true,
-    "frontchannelLogout" : true,
-    "protocol" : "openid-connect",
-    "attributes" : {
-      "oidc.ciba.grant.enabled" : "false",
-      "backchannel.logout.session.required" : "true",
-      "post.logout.redirect.uris" : "+",
-      "oauth2.device.authorization.grant.enabled" : "false",
-      "display.on.consent.screen" : "false",
-      "backchannel.logout.revoke.offline.tokens" : "false"
-    },
-    "authenticationFlowBindingOverrides" : { },
-    "fullScopeAllowed" : true,
-    "nodeReRegistrationTimeout" : -1,
-    "defaultClientScopes" : [ "web-origins", "acr", "roles", "profile", "email" ],
-    "optionalClientScopes" : [ "address", "phone", "offline_access", "microprofile-jwt" ]
-  }, {
-    "id" : "89528c8b-22f4-4147-8895-98cc02c6a44c",
-    "clientId" : "example-idtoken",
-    "name" : "",
-    "description" : "",
-    "rootUrl" : "http://localhost:8081",
-    "adminUrl" : "",
-    "baseUrl" : "",
-    "surrogateAuthRequired" : false,
-    "enabled" : true,
-    "alwaysDisplayInConsole" : false,
-    "clientAuthenticatorType" : "client-secret",
-    "redirectUris" : [ "file:///home/svacek/Work/repos/fedcm-demo-rp/index.html/*" ],
-    "webOrigins" : [ "file:///home" ],
+    "webOrigins" : [ "" ],
     "notBefore" : 0,
     "bearerOnly" : false,
     "consentRequired" : false,
@@ -3243,7 +3195,7 @@
       "subType" : "authenticated",
       "subComponents" : { },
       "config" : {
-        "allowed-protocol-mapper-types" : [ "saml-user-property-mapper", "saml-role-list-mapper", "saml-user-attribute-mapper", "oidc-full-name-mapper", "oidc-usermodel-property-mapper", "oidc-sha256-pairwise-sub-mapper", "oidc-address-mapper", "oidc-usermodel-attribute-mapper" ]
+        "allowed-protocol-mapper-types" : [ "oidc-full-name-mapper", "saml-role-list-mapper", "oidc-sha256-pairwise-sub-mapper", "saml-user-attribute-mapper", "oidc-usermodel-property-mapper", "saml-user-property-mapper", "oidc-usermodel-attribute-mapper", "oidc-address-mapper" ]
       }
     }, {
       "id" : "51762960-e016-4045-9355-9417611906e2",
@@ -3271,7 +3223,7 @@
       "subType" : "anonymous",
       "subComponents" : { },
       "config" : {
-        "allowed-protocol-mapper-types" : [ "oidc-sha256-pairwise-sub-mapper", "oidc-address-mapper", "saml-user-property-mapper", "saml-role-list-mapper", "saml-user-attribute-mapper", "oidc-full-name-mapper", "oidc-usermodel-property-mapper", "oidc-usermodel-attribute-mapper" ]
+        "allowed-protocol-mapper-types" : [ "saml-role-list-mapper", "saml-user-property-mapper", "oidc-usermodel-property-mapper", "oidc-usermodel-attribute-mapper", "oidc-full-name-mapper", "oidc-sha256-pairwise-sub-mapper", "oidc-address-mapper", "saml-user-attribute-mapper" ]
       }
     }, {
       "id" : "a3fdf93d-e7e6-46a2-94d2-8f7d7533fe33",

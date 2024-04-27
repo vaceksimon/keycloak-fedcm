@@ -1,3 +1,4 @@
+let clientId = "example-client"
 async function login() {
     let nonce = 123456;
 	let credential;
@@ -7,12 +8,12 @@ async function login() {
 				context: "signup",
                 providers: [{
                     configURL: "http://localhost:8080/realms/fedcm-realm/fedcm/config.json",
-                    clientId: "example-idtoken",
+                    clientId: clientId,
                     nonce: nonce,
                 }],
                 mode: "widget"
             },
-            mediation: "optional",
+            mediation: "required",
         });
 	} catch (e) {
 		const code = e.code;
@@ -36,8 +37,8 @@ async function logout() {
 	try {
 		await IdentityCredential.disconnect({
 		    configURL: "http://localhost:8080/realms/fedcm-realm/fedcm/config.json",
-		    clientId: "example-idtoken",
-		    accountHint: "test@test.com"
+		    clientId: clientId,
+		    accountHint: "test@test.com",
 		});
 
 	    document.getElementById('status').innerHTML="Logout was successful";

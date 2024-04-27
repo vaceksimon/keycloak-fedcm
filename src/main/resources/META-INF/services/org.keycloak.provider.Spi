@@ -1,1 +1,2 @@
-org.keycloak.fedcm.spi.RootResourceSPI
+# author: Simon Vacek
+org.keycloak.fedcm.spi.RootResourceSpi

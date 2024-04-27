@@ -7,7 +7,6 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.keycloak.events.EventBuilder;
@@ -35,18 +34,30 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * This class implements all the FedCM endpoint which are realm-based. It contains the business logic for serving the endpoints,
+ * and retrieving data for it.
+ *
+ * @author <a href="mailto:xvacek10@stud.fit.vutbr.cz">Simon Vacek</a>
+ */
 public class FedCMProvider implements RealmResourceProvider {
 
     /**
-     * Values representing some of the Error responses
+     * Values representing relevant errors encountered during identity assertion.
+     *
      * @see <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.2.1">OAuth 2.0 Error Response</a>
      */
     private enum ErrorTypes {
+        /** Error encountered when the client ID is unknown or the registered urls do not match */
         unauthorized_client,
+        /** Error encountered when there is not user authenticated with Keycloak */
         access_denied,
+        /** Error encountered when the supplied user ID does not match to the ID of an authenticated user */
         invalid_request;
 
         /**
+         * Returns a jax-rs response corresponding to the enum value.
+         *
          * @return a status code corresponding to the error type
          */
         public Response.Status getResponse() {
@@ -62,6 +73,7 @@ public class FedCMProvider implements RealmResourceProvider {
         }
     }
 
+    /** A Keycloak session is created per request */
     private final KeycloakSession session;
 
     public FedCMProvider(KeycloakSession session) {
@@ -75,9 +87,9 @@ public class FedCMProvider implements RealmResourceProvider {
 
     /**
      * The config file serves as a discovery device to other FedCM API endpoints provided by Keycloak.
-     * @see <a href="https://fedidcg.github.io/FedCM/#idp-api-config-file">FedCM API The Config File endpoint</a>
      *
-     * @return map of Keycloak FedCM configuration convertible to <a href="https://fedidcg.github.io/FedCM/#dictdef-identityproviderapiconfig">IdentityProviderAPIConfig</a>
+     * @see <a href="https://fedidcg.github.io/FedCM/#idp-api-config-file">FedCM API The Config File endpoint</a>
+     * @return map of a Keycloak FedCM configuration file convertible to <a href="https://fedidcg.github.io/FedCM/#dictdef-identityproviderapiconfig">IdentityProviderAPIConfig</a>
      */
     @GET
     @Path(FedCMUtils.ENDPOINTCONFIG)
@@ -105,8 +117,8 @@ public class FedCMProvider implements RealmResourceProvider {
 
     /**
      * The accounts endpoint provides an account of a user authenticated with Keycloak
-     * @see <a href="https://fedidcg.github.io/FedCM/#idp-api-accounts-endpoint">FedCM API Accounts endpoint</a>
      *
+     * @see <a href="https://fedidcg.github.io/FedCM/#idp-api-accounts-endpoint">FedCM API Accounts endpoint</a>
      * @return map of user information convertible to <a href="https://fedidcg.github.io/FedCM/#dictdef-identityprovideraccount">IdentityProviderAccount</a>
      */
     @GET
@@ -133,20 +145,21 @@ public class FedCMProvider implements RealmResourceProvider {
 
     /**
      * The client metadata endpoint provides metadata about a registered client at Keycloak. The client must exist
-     * @see <a href="https://fedidcg.github.io/FedCM/#idp-api-client-id-metadata-endpoint">FedCM API Client Metadata endpoint</a>
      *
-     * @param client_id
+     * @see <a href="https://fedidcg.github.io/FedCM/#idp-api-client-id-metadata-endpoint">FedCM API Client Metadata endpoint</a>
+     * @param origin client header origin
+     * @param clientId Keycloak specific client ID
      * @return map of client metadata convertible to <a href="https://fedidcg.github.io/FedCM/#dictdef-identityproviderclientmetadata">IdentityProviderClientMetadata</a>
      */
     @GET
     @Path(FedCMUtils.ENDPOINTMETADATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response fetchClientMetadata(@HeaderParam("Origin") String origin, @QueryParam("client_id") String client_id) {
+    public Response fetchClientMetadata(@HeaderParam("Origin") String origin, @QueryParam("client_id") String clientId) {
         // check for the Sec-Fetch-Dest header
         FedCMUtils.checkRequestHeader(session);
 
         // get client from registered in a realm
-        ClientModel client = session.getContext().getRealm().getClientByClientId(client_id);
+        ClientModel client = session.getContext().getRealm().getClientByClientId(clientId);
         if(client == null) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
@@ -170,29 +183,29 @@ public class FedCMProvider implements RealmResourceProvider {
 
     /**
      * The Identity Assertion endpoint verifies authenticated user, and generates an access token for a client.
+     *
      * @see <a href="https://fedidcg.github.io/FedCM/#idp-api-id-assertion-endpoint">FedCM API Identity assertion endpoint</a>
      *
-     * @param origin client origin
-     * @param account_id id of a chosen authenticated user
-     * @param client_id
+     * @param origin client header origin
+     * @param accountId ID of a chosen authenticated user
+     * @param clientId Keycloak specific client ID
      * @param nonce client request nonce
-     * @param disclosure_text_shown whether user agent showed user which information will be shared with client
+     * @param disclosureTextShown whether user agent showed user which information will be shared with client
      * @return Encoded Access token convertible to <a href="https://fedidcg.github.io/FedCM/#dictdef-identityprovidertoken">IdentityProviderToken</a>
-     * @see AccessTokenResponse#getToken() AccessTokenResponse#getToken()
      */
     @POST
     @Path(FedCMUtils.ENDPOINTIDASSERT)
     @Produces(MediaType.APPLICATION_JSON)
     public Response fetchIdentityAssertion(@HeaderParam("Origin") String origin,
-                                           @FormParam("account_id") String account_id,
-                                           @FormParam("client_id") String client_id,
+                                           @FormParam("account_id") String accountId,
+                                           @FormParam("client_id") String clientId,
                                            @FormParam("nonce") String nonce,
-                                           @QueryParam("disclosure_text_shown") boolean disclosure_text_shown) {
+                                           @QueryParam("disclosure_text_shown") boolean disclosureTextShown) {
         // check for the Sec-Fetch-Dest header
         FedCMUtils.checkRequestHeader(session);
 
         RealmModel realm = session.getContext().getRealm();
-        ClientModel client = realm.getClientByClientId(client_id);
+        ClientModel client = realm.getClientByClientId(clientId);
         if(client == null) { // client must be registered in Keycloak
             return idAssertError(ErrorTypes.unauthorized_client);
         }
@@ -210,7 +223,7 @@ public class FedCMProvider implements RealmResourceProvider {
         }
 
         UserModel user = authResult.getUser();
-        if (!user.getId().equals(account_id)) { // the request user id must match a Keycloak user id
+        if (!user.getId().equals(accountId)) { // the request user ID must match a Keycloak user ID
             return idAssertError(ErrorTypes.invalid_request);
         }
 
@@ -238,8 +251,8 @@ public class FedCMProvider implements RealmResourceProvider {
 
         // authentication successful with user consent, the client is approved for future fedcm login
         List<String> approvedClients = new ArrayList<>(user.getAttributeStream("approved_clients").toList());
-        if (!approvedClients.contains(client_id)) {
-            approvedClients.add(client_id);
+        if (!approvedClients.contains(clientId)) {
+            approvedClients.add(clientId);
             user.setAttribute("approved_clients", approvedClients);
         }
 
@@ -249,21 +262,21 @@ public class FedCMProvider implements RealmResourceProvider {
 
     /**
      * The Disconnect endpoint logs out a user from a client authenticated with FedCM
-     * @see <a href="https://fedidcg.github.io/FedCM/#idp-api-disconnect-endpoint">FedCM API Disconnect endpoint</a>
      *
-     * @param origin client origin
-     * @param client_id
-     * @return id of the user signed in to Keycloak
+     * @see <a href="https://fedidcg.github.io/FedCM/#idp-api-disconnect-endpoint">FedCM API Disconnect endpoint</a>
+     * @param origin client header origin
+     * @param clientId Keycloak specific client ID
+     * @return ID of the user signed in to Keycloak
      */
     @POST
     @Path(FedCMUtils.ENDPOINTDISCONNECT)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response disconnect(@HeaderParam("Origin") String origin, @FormParam("client_id") String client_id) {
+    public Response disconnect(@HeaderParam("Origin") String origin, @FormParam("client_id") String clientId) {
         // check for the Sec-Fetch-Dest header
         FedCMUtils.checkRequestHeader(session);
 
         RealmModel realm = session.getContext().getRealm();
-        ClientModel client = realm.getClientByClientId(client_id);
+        ClientModel client = realm.getClientByClientId(clientId);
         if (client == null) { // client must be registered in Keycloak
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
@@ -272,7 +285,6 @@ public class FedCMProvider implements RealmResourceProvider {
         }
 
         // with the cookies sent in the request and kept in KeycloakContext get authentication information
-
         AuthResult authResult = (new AuthenticationManager()).authenticateIdentityCookie(session, realm);
         if (authResult == null) { // user is probably not authenticated
             return Response.status(Response.Status.FORBIDDEN).build();
@@ -282,7 +294,7 @@ public class FedCMProvider implements RealmResourceProvider {
         UserSessionModel userSession = authResult.getSession();
         userSession.removeAuthenticatedClientSessions(new LinkedList<>() {{add(client.getId());}});
 
-        // prepare a JSON with user id
+        // prepare a JSON with user ID
         UserModel userModel = authResult.getUser();
 
         return Response.ok(Map.of("account_id", userModel.getId()))
@@ -293,7 +305,9 @@ public class FedCMProvider implements RealmResourceProvider {
     }
 
     /**
+     * Fills Map with branding preferences of Keycloak. Currently hardcoded
      *
+     * @see <a href="https://github.com/keycloak/keycloak-misc/">Keycloak Logos, Diagrams and more</a>
      * @return map of keycloak branding convertible to <a href="https://fedidcg.github.io/FedCM/#dictdef-identityproviderbranding">IdentityProviderBranding</a>
      */
     private Map<String, Object> getBranding() {
@@ -313,8 +327,9 @@ public class FedCMProvider implements RealmResourceProvider {
     }
 
     /**
+     * Fills Map with user information from a given user model.
      *
-     * @param user
+     * @param user user model
      * @return map of user information convertible to <a href="https://fedidcg.github.io/FedCM/#dictdef-identityprovideraccount">IdentityProviderAccount</a>
      */
     private Map<String, Object> getUserAccount(UserModel user) {
@@ -356,14 +371,14 @@ public class FedCMProvider implements RealmResourceProvider {
     /**
      * Redirects to Keycloak documentation with more information about an error encountered when generating a token.
      *
-     * @param error_type one of the <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.2.1">OAuth error responses</a>
+     * @param errorType one of the <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.2.1">OAuth error responses</a>
      * @return a 302 redirect response to Keycloak documentation
      */
     @GET
     @Path("error")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response errorRedirector(@QueryParam("error-type") String error_type) {
-        ErrorTypes enumErrorType = ErrorTypes.valueOf(error_type);
+    public Response errorRedirector(@QueryParam("error-type") String errorType) {
+        ErrorTypes enumErrorType = ErrorTypes.valueOf(errorType);
         Response.ResponseBuilder rb = Response.status(Response.Status.FOUND);
         switch (enumErrorType) {
             case unauthorized_client:
