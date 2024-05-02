@@ -1,24 +1,29 @@
 async function renderProfilePage() {
-    const profileElement = document.getElementById('profileBody');
-    const displayTokenElement = document.getElementById('displayToken');
-    const loginButton = document.getElementById("loginButton");
     const formElement = document.getElementById("formFedCMConfig");
+    const loginButton = document.getElementById("loginButton");
+    const profileElement = document.getElementById('profileBody');
+    const displayTokenBtn = document.getElementById('displayToken');
+    const sendRequestBtn = document.getElementById('sendRequestButton');
 
     const accessToken = await getJSONToken();
     if(accessToken === false) {
-        profileElement.innerHTML = 'You are not logged in';
-        displayTokenElement.setAttribute("style", "cursor:not-allowed");
-        displayTokenElement.disabled=true;
         formElement.setAttribute("action", "javascript:login()")
         loginButton.setAttribute("class", "btn btn-outline-success")
         loginButton.innerHTML='Sign in';
+        profileElement.innerHTML = 'You are not logged in';
+        displayTokenBtn.setAttribute("style", "cursor:not-allowed");
+        displayTokenBtn.disabled=true;
+        sendRequestBtn.setAttribute("style", "cursor:not-allowed");
+        sendRequestBtn.disabled=true;
         return;
     }
-    displayTokenElement.setAttribute("style", "cursor:pointer");
-    displayTokenElement.disabled=false;
     formElement.setAttribute("action", "javascript:logout()")
     loginButton.setAttribute("class", "btn btn-outline-danger")
     loginButton.innerHTML='Sign out';
+    displayTokenBtn.setAttribute("style", "cursor:pointer");
+    displayTokenBtn.disabled=false;
+    sendRequestBtn.setAttribute("style", "cursor:pointer");
+    sendRequestBtn.disabled=false;
 
     profileElement.innerHTML =
     `
@@ -36,6 +41,47 @@ async function renderProfilePage() {
     </div>
     `
 }
+//http://localhost:8080/realms/fedcm-realm/protocol/openid-connect/userinfo
+async function sendRequestWithToken() {
+    let port = document.getElementById('keycloakPort').value;
+    if (document.getElementById('portFeedback').innerHTML !== '' || port === '') {
+        port = 8080;
+    }
+
+    const token = await getEncodedToken();
+    const userinfoUrl = "http://localhost:" + port + "/realms/fedcm-realm/protocol/openid-connect/userinfo";
+    const headers = new Headers({'Authorization': `Bearer ${token}`});
+    let response;
+
+    try {
+        response = await fetch(userinfoUrl, { method: 'GET', headers: headers });
+            if(!response.ok) {
+            displayError("fetching the UserInfo Keycloak endpoint");
+            return;
+        }
+    }
+    catch (e) {
+        displayError("fetching the UserInfo Keycloak endpoint");
+        return;
+    }
+
+    const responseData = await response.json();
+    const jsonString = JSON.stringify(responseData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    window.open(url, 'JSON Display', 'width=600,height=400,left=200,top=200');
+}
+
+function displayError(message) {
+    document.getElementById('alert-error').innerHTML=`
+        <div class="alert alert-danger alert-dismissible fade show">
+            <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+            <strong>Error during ${message}</strong>
+        </div>
+    `;
+    return;
+}
+
 
 async function displayToken() {
     const jsonToken = await getJSONToken();

@@ -20,6 +20,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthResult;
 import org.keycloak.services.managers.AuthenticationSessionManager;
@@ -235,13 +236,13 @@ public class FedCMProvider implements RealmResourceProvider {
 
         // scopes which the client wants access to
         authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, "openid profile email");
+        authSession.setClientNote(OIDCLoginProtocol.NONCE_PARAM, nonce);
+        authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
         AuthenticationManager.setClientScopesInSession(authSession);
 
         // set the client nonce to be included in the token
         UserSessionModel userSession = authResult.getSession();
         ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(session, userSession, authSession);
-        authSession.setClientNote(OIDCLoginProtocol.NONCE_PARAM, nonce);
-        clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, nonce);
 
         // generate a token
         EventBuilder eventBuilder = new EventBuilder(realm, session);

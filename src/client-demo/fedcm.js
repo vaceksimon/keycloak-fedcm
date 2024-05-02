@@ -17,13 +17,7 @@ async function login() {
             mediation: mediation,
         })
 	} catch (e) {
-	    document.getElementById('alert-error').innerHTML=`
-	        <div class="alert alert-danger alert-dismissible fade show">
-                <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-                <strong>Error during login</strong>
-            </div>
-	    `;
-	    console.log(e);
+	    displayError("sign-in");
 	    return;
 	}
     const decodedToken = JSON.parse(base64UrlDecode(credential.token.split('.')[1]));
@@ -47,12 +41,7 @@ async function logout() {
 		});
 	}
 	catch(e) {
-		document.getElementById('alert-error').innerHTML=`
-            <div class="alert alert-danger alert-dismissible fade show">
-                <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-                <strong>Error during logout</strong>
-            </div>
-        `;
+		displayError("sign-out");
         return;
 	}
     await cookieStore.delete("accessToken")
@@ -79,10 +68,16 @@ function base64UrlDecode(input) {
     }
 }
 
-async function getJSONToken() {
-    const tokenCookie = await cookieStore.get('accessToken');
+async function getEncodedToken() {
+    const tokenCookie =  await cookieStore.get('accessToken');
     if (tokenCookie === null) {
-        return false
+        return false;
     }
-	return JSON.parse(base64UrlDecode(tokenCookie.value.split('.')[1]));
+    return tokenCookie.value;
+}
+
+async function getJSONToken() {
+    const token = await getEncodedToken();
+
+	return token ? JSON.parse(base64UrlDecode(token.split('.')[1])) : false;
 }
