@@ -1,93 +1,63 @@
-clientId = "example-client";
+function renderProfilePage() {
+    renderNavbar();
+    accessToken = localStorage.getItem('accessToken');
+    const profileElement = document.getElementById('profileBody');
+    const displayTokenElement = document.getElementById('displayToken');
 
-async function login() {
-    let port, mode, mediation;
-    if (document.getElementById("formFedCMConfig")) {
-        [port, mode, mediation] = getFedCMConfig();
+    if(accessToken === null) {
+        profileElement.innerHTML = 'You are not logged in';
+        displayTokenElement.setAttribute("style", "cursor:not-allowed");
+        displayTokenElement.disabled=true;
+        return;
+    }
+    displayTokenElement.setAttribute("style", "cursor:pointer");
+    displayTokenElement.disabled=false;
+
+    decodedToken = getJSONToken(accessToken);
+
+    profileElement.innerHTML =
+    `
+    <div class="d-flex flex-nowrap flex-column">
+        <div class="row">
+            <div class="col-7">
+    	        <p>First name: ` + decodedToken.given_name + `</p>
+    		    <p>Last name: ` + decodedToken.family_name + `</p>
+        		<p>Email: ` + decodedToken.email + `</p>
+           	</div>
+           	<div class="col-5">
+    	        <img src="` + decodedToken.picture + `" class="rounded-circle" style="aspect-ratio : 1 / 1; width: 200px;" />
+    		<div class="col-7">
+    	</div>
+    </div>
+    `
+}
+
+function displayToken() {
+    const jsonToken = getJSONToken();
+    if(jsonToken === false) {
+        return;
+    }
+    const jsonString = JSON.stringify(jsonToken, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    window.open(url, 'JSON Display', 'width=600,height=400,left=200,top=200');
+
+}
+
+function checkPort() {
+    const inputKeycloakPort = document.getElementById('keycloakPort');
+    const portFeedback = document.getElementById('portFeedback');
+    const regex = /^((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{0,5})|([0-9]{1,4}))$/; // https://ihateregex.io/expr/port/
+    if(!regex.test(inputKeycloakPort.value)) {
+        inputKeycloakPort.setAttribute("class", "form-control is-invalid");
+        portFeedback.innerHTML = "<span class=\"text-danger\">Invalid port entered. Default port 8080 will be used</span>";
     }
     else {
-        port = 8080;
-        mode = "widget";
-        mediation = "required"
-    }
-
-    const nonce = 123456;
-	let credential;
-	try {
-	    credential = await navigator.credentials.get({
-	        identity: {
-                providers: [{
-                    configURL: "http://localhost:" + port + "/realms/fedcm-realm/fedcm/config.json",
-                    clientId: clientId,
-                    nonce: nonce,
-                }],
-                mode: mode,
-            },
-            mediation: mediation,
-        })
-	} catch (e) {
-	    document.getElementById('alert-error').innerHTML=`
-	        <div class="alert alert-danger alert-dismissible fade show">
-                <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-                <strong>Error during login</strong>
-            </div>
-	    `;
-	    console.log(e);
-	    return;
-	}
-	localStorage.setItem('accessToken', credential.token);
-    document.dispatchEvent(new CustomEvent("loginStatus", {detail: "login"}))
-}
-
-async function logout() {
-	try {
-		await IdentityCredential.disconnect({
-		    configURL: "http://localhost:8080/realms/fedcm-realm/fedcm/config.json",
-		    clientId: clientId,
-		    accountHint: "test@test.com",
-		});
-	}
-	catch(e) {
-		document.getElementById('alert-error').innerHTML=`
-            <div class="alert alert-danger alert-dismissible fade show">
-                <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-                <strong>Error during logout</strong>
-            </div>
-        `;
-        return;
-	}
-	localStorage.removeItem("accessToken");
-	document.dispatchEvent(new CustomEvent("loginStatus", {detail: "logout"}))
-}
-
-function base64UrlDecode(input) {
-    input = input.replace(/-/g, '+').replace(/_/g, '/');
-    var pad = input.length % 4;
-    if (pad) {
-        if (pad === 1) {
-            throw new Error('InvalidLengthError: Input base64url string is the wrong length to determine padding');
-        }
-        input += new Array(5 - pad).join('=');
-    }
-    var output = atob(input);
-    try {
-        // Convert binary string to UTF-8
-        return decodeURIComponent(Array.prototype.map.call(output, function(c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
-    } catch (e) {
-        console.error(e);
-        return null;
+        inputKeycloakPort.setAttribute("class", "form-control");
+        portFeedback.innerHTML = "";
     }
 }
 
-function getJSONToken() {
-    const token = localStorage.getItem('accessToken');
-    if (token === null) {
-        return false
-    }
-	return JSON.parse(base64UrlDecode(token.split('.')[1]));
-}
 
 function getFedCMConfig() {
     let port = document.getElementById('keycloakPort').value;
@@ -117,16 +87,21 @@ function renderNavbar() {
     }
 }
 
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", () => {
     renderNavbar();
+    renderProfilePage();
+    document.getElementById('keycloakPort').addEventListener('keyup', checkPort);
+    document.getElementById('keycloakPort').addEventListener('mouseup', checkPort);
 });
 
-document.addEventListener("loginStatus", function() {
+document.addEventListener("loginStatus", () => {
     renderNavbar();
+    renderProfilePage();
 });
 
 window.addEventListener("storage", function(e) {
     if(e.key === "accessToken") {
         renderNavbar();
+        renderProfilePage();
     }
 })
