@@ -1,30 +1,39 @@
-let clientId = "example-client";
+clientId = "example-client";
 
 async function login() {
-    let nonce = 123456;
+    let port, mode, mediation;
+    if (document.getElementById("formFedCMConfig")) {
+        [port, mode, mediation] = getFedCMConfig();
+    }
+    else {
+        port = 8080;
+        mode = "widget";
+        mediation = "required"
+    }
+
+    const nonce = 123456;
 	let credential;
 	try {
 	    credential = await navigator.credentials.get({
 	        identity: {
                 providers: [{
-                    configURL: "http://localhost:8080/realms/fedcm-realm/fedcm/config.json",
+                    configURL: "http://localhost:" + port + "/realms/fedcm-realm/fedcm/config.json",
                     clientId: clientId,
                     nonce: nonce,
                 }],
-                mode: "widget"
+                mode: mode,
             },
-            mediation: "required",
-        });
+            mediation: mediation,
+        })
 	} catch (e) {
-		const code = e.code;
-		const url = e.url;
-		console.log(code);
-		console.log(url);
-		return;
-
-	    document.getElementById('status').innerHTML="";
-	    document.getElementById('message').innerHTML="";
-	    document.getElementById('error').innerHTML="Error during login :(";
+	    document.getElementById('alert-error').innerHTML=`
+	        <div class="alert alert-danger alert-dismissible fade show">
+                <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+                <strong>Error during login</strong>
+            </div>
+	    `;
+	    console.log(e);
+	    return;
 	}
 	localStorage.setItem('accessToken', credential.token);
     document.dispatchEvent(new CustomEvent("loginStatus", {detail: "login"}))
@@ -39,9 +48,13 @@ async function logout() {
 		});
 	}
 	catch(e) {
-		document.getElementById('error').innerHTML="Error during logout :(";
-		document.getElementById('status').innerHTML="";
-		document.getElementById('message').innerHTML="";
+		document.getElementById('alert-error').innerHTML=`
+            <div class="alert alert-danger alert-dismissible fade show">
+                <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+                <strong>Error during logout</strong>
+            </div>
+        `;
+        return;
 	}
 	localStorage.removeItem("accessToken");
 	document.dispatchEvent(new CustomEvent("loginStatus", {detail: "logout"}))
@@ -74,6 +87,16 @@ function getJSONToken() {
         return false
     }
 	return JSON.parse(base64UrlDecode(token.split('.')[1]));
+}
+
+function getFedCMConfig() {
+    let port = document.getElementById('keycloakPort').value;
+    if (document.getElementById('portFeedback').innerHTML !== '' || port === '') {
+        port = 8080;
+    }
+    const mode = document.querySelector('input[name = "mode"]:checked').value;
+    const mediation = document.querySelector('input[name = "mediation"]:checked').value;
+    return [port, mode, mediation];
 }
 
 function renderNavbar() {
