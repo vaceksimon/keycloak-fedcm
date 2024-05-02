@@ -22,10 +22,6 @@
                     <a class="btn btn-primary" style="cursor:pointer" href="profile.html" role="button"
                        id="profileButton">My Profile</a>
                 </div>
-                <div class="p-2 bd-highlight">
-                    <button class="btn btn-outline-primary" onClick="login()" role="button" id="loginButton">Login
-                    </button>
-                </div>
             </div>
         </nav>
     </div>
@@ -33,25 +29,18 @@
 <div class="d-flex flex-grow-1 flex-shrink-1 m-0">
     <div class="container my-4">
         <div id="alert-error"></div>
-        <div class="card">
-            <div class="card-header">
-                User Profile
-            </div>
-            <div class="card-body" id="profileBody">
-
-            </div>
-        </div>
-        <div class="container my-4">
-            <button class="btn btn-outline-primary" role="button" onclick="displayToken()" id="displayToken"
-                    style="cursor:not-allowed" disabled>Show Acccess token
-            </button>
-        </div>
         <div class="card mt-4">
             <div class="card-header">
                 FedCM configuration
             </div>
             <div class="card-body" id="fedCMForm">
-                <form id="formFedCMConfig">
+                <form id="formFedCMConfig" action="javascript:login()">
+                    <div class="form-group row">
+                        <label for="clientID" class="col-sm-2 col-form-label">Client ID</label>
+                        <div class="col-sm-10">
+                            <input class="form-control" id="clientID" placeholder="example-client">
+                        </div>
+                    </div>
                     <div class="form-group row">
                         <label for="keycloakPort" class="col-sm-2 col-form-label">Keycloak port</label>
                         <div class="col-sm-10">
@@ -103,8 +92,26 @@
                             </div>
                         </div>
                     </fieldset>
+                    <div class="form-group row">
+                        <div class="col-sm-10">
+                            <button id="loginButton" type="submit" class="btn btn-outline-success">Sign in</button>
+                        </div>
+                    </div>
                 </form>
             </div>
+        </div>
+        <div class="card my-4">
+            <div class="card-header">
+                User Profile
+            </div>
+            <div class="card-body" id="profileBody">
+
+            </div>
+        </div>
+        <div class="container my-4">
+            <button class="btn btn-outline-primary" role="button" onclick="displayToken()" id="displayToken"
+                    style="cursor:not-allowed" disabled>Show Acccess token
+            </button>
         </div>
     </div>
 </div>

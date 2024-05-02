@@ -1,15 +1,6 @@
-clientId = "example-client";
-
 async function login() {
-    let port, mode, mediation;
-    if (document.getElementById("formFedCMConfig")) {
-        [port, mode, mediation] = getFedCMConfig();
-    }
-    else {
-        port = 8080;
-        mode = "widget";
-        mediation = "required"
-    }
+    let clientId, port, mode, mediation;
+    [clientId, port, mode, mediation] = getFedCMConfig();
 
     const nonce = 123456;
 	let credential;
@@ -45,9 +36,12 @@ async function login() {
 }
 
 async function logout() {
+    let clientId, port;
+    [clientId, port,,] = getFedCMConfig();
+
 	try {
 		await IdentityCredential.disconnect({
-		    configURL: "http://localhost:8080/realms/fedcm-realm/fedcm/config.json",
+		    configURL: "http://localhost:" + port + "/realms/fedcm-realm/fedcm/config.json",
 		    clientId: clientId,
 		    accountHint: "test@test.com",
 		});

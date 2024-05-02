@@ -1,16 +1,24 @@
 async function renderProfilePage() {
-    const accessToken = await getJSONToken();
     const profileElement = document.getElementById('profileBody');
     const displayTokenElement = document.getElementById('displayToken');
+    const loginButton = document.getElementById("loginButton");
+    const formElement = document.getElementById("formFedCMConfig");
 
+    const accessToken = await getJSONToken();
     if(accessToken === false) {
         profileElement.innerHTML = 'You are not logged in';
         displayTokenElement.setAttribute("style", "cursor:not-allowed");
         displayTokenElement.disabled=true;
+        formElement.setAttribute("action", "javascript:login()")
+        loginButton.setAttribute("class", "btn btn-outline-success")
+        loginButton.innerHTML='Sign in';
         return;
     }
     displayTokenElement.setAttribute("style", "cursor:pointer");
     displayTokenElement.disabled=false;
+    formElement.setAttribute("action", "javascript:logout()")
+    loginButton.setAttribute("class", "btn btn-outline-danger")
+    loginButton.innerHTML='Sign out';
 
     profileElement.innerHTML =
     `
@@ -61,31 +69,17 @@ function getFedCMConfig() {
     if (document.getElementById('portFeedback').innerHTML !== '' || port === '') {
         port = 8080;
     }
+    let clientId = document.getElementById('clientID').value;
+    if(clientId === '') {
+        clientId = "example-client";
+    }
+
     const mode = document.querySelector('input[name = "mode"]:checked').value;
     const mediation = document.querySelector('input[name = "mediation"]:checked').value;
-    return [port, mode, mediation];
-}
-
-async function renderNavbar() {
-    accessToken = await getJSONToken();
-    const loginButton = document.getElementById('loginButton');
-    const profileButton = document.getElementById('profileButton');
-    if (accessToken === false) {
-        loginButton.innerHTML = "Login";
-        loginButton.setAttribute("onclick", "login()");
-        loginButton.setAttribute("class", "btn btn-outline-primary")
-        profileButton.setAttribute("class", "btn btn-secondary")
-    }
-    else {
-        loginButton.innerHTML = "Logout";
-        loginButton.setAttribute("onclick", "logout()");
-        loginButton.setAttribute("class", "btn btn-outline-danger")
-        profileButton.setAttribute("class", "btn btn-primary")
-    }
+    return [clientId, port, mode, mediation];
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    renderNavbar();
     renderProfilePage();
     document.getElementById('keycloakPort').addEventListener('keyup', checkPort);
     document.getElementById('keycloakPort').addEventListener('mouseup', checkPort);
@@ -94,13 +88,11 @@ document.addEventListener("DOMContentLoaded", () => {
 cookieStore.addEventListener("change", function(e) {
     for(cookie of e.changed) {
         if(cookie.name === "accessToken") {
-            renderNavbar();
             renderProfilePage();
         }
     }
     for(cookie of e.deleted) {
         if(cookie.name === "accessToken") {
-            renderNavbar();
             renderProfilePage();
         }
     }
