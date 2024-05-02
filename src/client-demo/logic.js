@@ -1,3 +1,11 @@
+/**
+ * These scripts handle the dynamic updating of the profile page.
+ * @author <a href="mailto:xvacek10@stud.fit.vutbr.cz">Simon Vacek</a>
+*/
+
+/**
+ * When change in the login status is detected, the page is rendered again to correspond to the state.
+*/
 async function renderProfilePage() {
     const formElement = document.getElementById("formFedCMConfig");
     const loginButton = document.getElementById("loginButton");
@@ -41,19 +49,26 @@ async function renderProfilePage() {
     </div>
     `
 }
-//http://localhost:8080/realms/fedcm-realm/protocol/openid-connect/userinfo
+
+/**
+ * Sends a request with the access token to the Keycloak OIDC userinfo endpoint and displays the response demonstrating its functionality.
+ * @see <a href="https://openid.net/specs/openid-connect-core-1_0.html#UserInfo">UserInfo Endpoint</a>
+ */
 async function sendRequestWithToken() {
+    // Load a proper port of Keycloak from the user form
     let port = document.getElementById('keycloakPort').value;
     if (document.getElementById('portFeedback').innerHTML !== '' || port === '') {
         port = 8080;
     }
 
+    // prepare parameters for the request
     const token = await getEncodedToken();
     const userinfoUrl = "http://localhost:" + port + "/realms/fedcm-realm/protocol/openid-connect/userinfo";
     const headers = new Headers({'Authorization': `Bearer ${token}`});
     let response;
 
     try {
+        // send a request to the userinfo endpoint
         response = await fetch(userinfoUrl, { method: 'GET', headers: headers });
             if(!response.ok) {
             displayError("fetching the UserInfo Keycloak endpoint");
@@ -65,6 +80,7 @@ async function sendRequestWithToken() {
         return;
     }
 
+    // display the JSON response in a new window
     const responseData = await response.json();
     const jsonString = JSON.stringify(responseData, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
@@ -72,6 +88,10 @@ async function sendRequestWithToken() {
     window.open(url, 'JSON Display', 'width=600,height=400,left=200,top=200');
 }
 
+/**
+ * Displays an error at the top of the page.
+ * @param message Error message
+*/
 function displayError(message) {
     document.getElementById('alert-error').innerHTML=`
         <div class="alert alert-danger alert-dismissible fade show">
@@ -82,7 +102,9 @@ function displayError(message) {
     return;
 }
 
-
+/**
+ * Display the JWT of the access token in a new window
+*/
 async function displayToken() {
     const jsonToken = await getJSONToken();
     if(jsonToken === false) {
@@ -92,13 +114,16 @@ async function displayToken() {
     const blob = new Blob([jsonString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     window.open(url, 'JSON Display', 'width=600,height=400,left=200,top=200');
-
 }
 
+/**
+ * Check if the entered port in the form is valid and display an error message if not.
+ * The used regular expression is taken from <a href="https://ihateregex.io/expr/port/">iHateRegex</a>
+*/
 function checkPort() {
     const inputKeycloakPort = document.getElementById('keycloakPort');
     const portFeedback = document.getElementById('portFeedback');
-    const regex = /^((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{0,5})|([0-9]{1,4}))$/; // https://ihateregex.io/expr/port/
+    const regex = /^((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{0,5})|([0-9]{1,4}))$/;
     if(!regex.test(inputKeycloakPort.value)) {
         inputKeycloakPort.setAttribute("class", "form-control is-invalid");
         portFeedback.innerHTML = "<span class=\"text-danger\">Invalid port entered. Default port 8080 will be used</span>";
@@ -109,7 +134,9 @@ function checkPort() {
     }
 }
 
-
+/**
+ * Loads data from the user form and provides default values for those invalid.
+*/
 function getFedCMConfig() {
     let port = document.getElementById('keycloakPort').value;
     if (document.getElementById('portFeedback').innerHTML !== '' || port === '') {
@@ -125,12 +152,14 @@ function getFedCMConfig() {
     return [clientId, port, mode, mediation];
 }
 
+// Registering check function for the port input in the form
 document.addEventListener("DOMContentLoaded", () => {
     renderProfilePage();
     document.getElementById('keycloakPort').addEventListener('keyup', checkPort);
     document.getElementById('keycloakPort').addEventListener('mouseup', checkPort);
 });
 
+// Registering a new render of the page if token cookie was changed or deleted
 cookieStore.addEventListener("change", function(e) {
     for(cookie of e.changed) {
         if(cookie.name === "accessToken") {

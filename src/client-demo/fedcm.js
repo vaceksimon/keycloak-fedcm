@@ -1,4 +1,14 @@
+/**
+ * These scripts handle logic behind signing in and out with FedCM and decoding the retrieved token.
+ * @author <a href="mailto:xvacek10@stud.fit.vutbr.cz">Simon Vacek</a>
+*/
+
+/**
+ * Performs a FedCM sign-in with configuration loaded from the user form. The retrieved token is stored in a cookie.
+ * @see <a href="https://fedidcg.github.io/FedCM/#browser-api">FedCM API specification</a>
+*/
 async function login() {
+    // load configuration for the login
     let clientId, port, mode, mediation;
     [clientId, port, mode, mediation] = getFedCMConfig();
 
@@ -20,6 +30,8 @@ async function login() {
 	    displayError("sign-in");
 	    return;
 	}
+
+	// store the token in a cookie
     const decodedToken = JSON.parse(base64UrlDecode(credential.token.split('.')[1]));
     await cookieStore.set({
         name: "accessToken",
@@ -29,7 +41,12 @@ async function login() {
     });
 }
 
+/**
+ * Performs a FedCM sign-out with configuration loaded from the user form. Deletes the token cookie.
+ * @see <a href="https://fedidcg.github.io/FedCM/#browser-api">FedCM API specification</a>
+*/
 async function logout() {
+    // load configuration for the logout
     let clientId, port;
     [clientId, port,,] = getFedCMConfig();
 
@@ -47,6 +64,12 @@ async function logout() {
     await cookieStore.delete("accessToken")
 }
 
+/**
+ * Decodes a token into a readable form.
+ * Code taken from <a href="https://github.com/PacktPublishing/Keycloak-Identity-and-Access-Management-for-Modern-Applications/blob/master/ch4/client.js">Keycloak examples from the Keycloak book</a>
+ *
+ * @param input Encoded token
+*/
 function base64UrlDecode(input) {
     input = input.replace(/-/g, '+').replace(/_/g, '/');
     var pad = input.length % 4;
@@ -56,18 +79,13 @@ function base64UrlDecode(input) {
         }
         input += new Array(5 - pad).join('=');
     }
-    var output = atob(input);
-    try {
-        // Convert binary string to UTF-8
-        return decodeURIComponent(Array.prototype.map.call(output, function(c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
-    } catch (e) {
-        console.error(e);
-        return null;
-    }
+    return atob(input);
 }
 
+/**
+ * Retrieves the token from the token cookie.
+ * @returns Value of the cookie or false if the cookie is not set.
+*/
 async function getEncodedToken() {
     const tokenCookie =  await cookieStore.get('accessToken');
     if (tokenCookie === null) {
@@ -76,8 +94,10 @@ async function getEncodedToken() {
     return tokenCookie.value;
 }
 
+/**
+ * Returns a JSON representation of the body of the token.
+*/
 async function getJSONToken() {
     const token = await getEncodedToken();
-
 	return token ? JSON.parse(base64UrlDecode(token.split('.')[1])) : false;
 }

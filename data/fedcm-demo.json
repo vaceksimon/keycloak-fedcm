@@ -2401,7 +2401,7 @@
   "users" : [ {
     "id" : "66bb191d-e48b-4514-a2d6-6e9d6b2a808c",
     "username" : "user",
-    "firstName" : "Šimon",
+    "firstName" : "Simon",
     "lastName" : "Vacek",
     "email" : "xvacek10@stud.fit.vutbr.cz",
     "emailVerified" : true,
