@@ -35,8 +35,13 @@ async function login() {
 	    console.log(e);
 	    return;
 	}
-	localStorage.setItem('accessToken', credential.token);
-    document.dispatchEvent(new CustomEvent("loginStatus", {detail: "login"}))
+    const decodedToken = JSON.parse(base64UrlDecode(credential.token.split('.')[1]));
+    await cookieStore.set({
+        name: "accessToken",
+        value: credential.token,
+        expires: decodedToken.exp*1000,
+        sameSite: "strict"
+    });
 }
 
 async function logout() {
@@ -56,8 +61,7 @@ async function logout() {
         `;
         return;
 	}
-	localStorage.removeItem("accessToken");
-	document.dispatchEvent(new CustomEvent("loginStatus", {detail: "logout"}))
+    await cookieStore.delete("accessToken")
 }
 
 function base64UrlDecode(input) {
@@ -81,10 +85,10 @@ function base64UrlDecode(input) {
     }
 }
 
-function getJSONToken() {
-    const token = localStorage.getItem('accessToken');
-    if (token === null) {
+async function getJSONToken() {
+    const tokenCookie = await cookieStore.get('accessToken');
+    if (tokenCookie === null) {
         return false
     }
-	return JSON.parse(base64UrlDecode(token.split('.')[1]));
+	return JSON.parse(base64UrlDecode(tokenCookie.value.split('.')[1]));
 }

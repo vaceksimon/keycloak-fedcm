@@ -1,10 +1,9 @@
-function renderProfilePage() {
-    renderNavbar();
-    accessToken = localStorage.getItem('accessToken');
+async function renderProfilePage() {
+    const accessToken = await getJSONToken();
     const profileElement = document.getElementById('profileBody');
     const displayTokenElement = document.getElementById('displayToken');
 
-    if(accessToken === null) {
+    if(accessToken === false) {
         profileElement.innerHTML = 'You are not logged in';
         displayTokenElement.setAttribute("style", "cursor:not-allowed");
         displayTokenElement.disabled=true;
@@ -13,27 +12,25 @@ function renderProfilePage() {
     displayTokenElement.setAttribute("style", "cursor:pointer");
     displayTokenElement.disabled=false;
 
-    decodedToken = getJSONToken(accessToken);
-
     profileElement.innerHTML =
     `
     <div class="d-flex flex-nowrap flex-column">
         <div class="row">
             <div class="col-7">
-    	        <p>First name: ` + decodedToken.given_name + `</p>
-    		    <p>Last name: ` + decodedToken.family_name + `</p>
-        		<p>Email: ` + decodedToken.email + `</p>
+    	        <p>First name: ` + accessToken.given_name + `</p>
+    		    <p>Last name: ` + accessToken.family_name + `</p>
+        		<p>Email: ` + accessToken.email + `</p>
            	</div>
            	<div class="col-5">
-    	        <img src="` + decodedToken.picture + `" class="rounded-circle" style="aspect-ratio : 1 / 1; width: 200px;" />
+    	        <img src="` + accessToken.picture + `" class="rounded-circle" style="aspect-ratio : 1 / 1; width: 200px;" />
     		<div class="col-7">
     	</div>
     </div>
     `
 }
 
-function displayToken() {
-    const jsonToken = getJSONToken();
+async function displayToken() {
+    const jsonToken = await getJSONToken();
     if(jsonToken === false) {
         return;
     }
@@ -69,8 +66,8 @@ function getFedCMConfig() {
     return [port, mode, mediation];
 }
 
-function renderNavbar() {
-    accessToken = getJSONToken();
+async function renderNavbar() {
+    accessToken = await getJSONToken();
     const loginButton = document.getElementById('loginButton');
     const profileButton = document.getElementById('profileButton');
     if (accessToken === false) {
@@ -94,14 +91,17 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById('keycloakPort').addEventListener('mouseup', checkPort);
 });
 
-document.addEventListener("loginStatus", () => {
-    renderNavbar();
-    renderProfilePage();
-});
-
-window.addEventListener("storage", function(e) {
-    if(e.key === "accessToken") {
-        renderNavbar();
-        renderProfilePage();
+cookieStore.addEventListener("change", function(e) {
+    for(cookie of e.changed) {
+        if(cookie.name === "accessToken") {
+            renderNavbar();
+            renderProfilePage();
+        }
     }
-})
+    for(cookie of e.deleted) {
+        if(cookie.name === "accessToken") {
+            renderNavbar();
+            renderProfilePage();
+        }
+    }
+});
