@@ -3,6 +3,16 @@
  * @author <a href="mailto:xvacek10@stud.fit.vutbr.cz">Simon Vacek</a>
 */
 
+async function fedcm() {
+    const isLoggedIn = await getEncodedToken();
+    if(isLoggedIn) {
+        logout();
+    }
+    else {
+        login();
+    }
+}
+
 /**
  * Performs a FedCM sign-in with configuration loaded from the user form. The retrieved token is stored in a cookie.
  * @see <a href="https://fedidcg.github.io/FedCM/#browser-api">FedCM API specification</a>

@@ -34,38 +34,187 @@
         <h1>Welcome to an example client-side application</h1>
         <h2>Prerequisites</h2>
         <ul>
-            <li>Make sure to use Google <strong>Chrome version 124</strong>. Your current version can be found by entering <mark>"chrome://version"</mark>
+            <li>Make sure to use Google <strong>Chrome version 124</strong>. Your current version can be found by
+                entering
+                <mark>"chrome://version"</mark>
                 in the search bar
             </li>
             <li>
-                Enter <mark>"chrome://flags/"</mark> in Chrome search bar and <strong>set the following flags:</strong>
+                Enter
+                <mark>"chrome://flags/"</mark>
+                in Chrome search bar and <strong>set the following flags:</strong>
                 <ul>
-                    <li><mark>#test-third-party-cookie-phaseout</mark>: Enabled</li>
-                    <li><mark>#fedcm-without-well-known-enforcement</mark>: Disabled</li>
-                    <li><mark>#fedcm-skip-well-known-for-same-site</mark>: Disabled</li>
-                    <li><mark>#fedcm-idp-signin-status-api</mark>: Enabled</li>
-                    <li><mark>#fedcm-error</mark>: Enabled</li>
-                    <li><mark>#fedcm-disconnect</mark>: Enabled</li>
-                    <li><mark>#fedcm-button-mode</mark>: Enabled</li>
+                    <li>
+                        <mark>#test-third-party-cookie-phaseout</mark>
+                        : Enabled
+                    </li>
+                    <li>
+                        <mark>#fedcm-without-well-known-enforcement</mark>
+                        : Disabled
+                    </li>
+                    <li>
+                        <mark>#fedcm-skip-well-known-for-same-site</mark>
+                        : Disabled
+                    </li>
+                    <li>
+                        <mark>#fedcm-idp-signin-status-api</mark>
+                        : Enabled
+                    </li>
+                    <li>
+                        <mark>#fedcm-error</mark>
+                        : Enabled
+                    </li>
+                    <li>
+                        <mark>#fedcm-disconnect</mark>
+                        : Enabled
+                    </li>
+                    <li>
+                        <mark>#fedcm-button-mode</mark>
+                        : Enabled
+                    </li>
                 </ul>
             </li>
             <li>
-                <strong>Enable Third-party sign-in</strong> in settings (<mark>chrome://settings/content/federatedIdentityApi</mark>).<br />
-                <strong>Sometimes Chrome automatically blocks it</strong> for a specific address during testing. Mostly when a user cancels the sign-in
+                <strong>Enable Third-party sign-in</strong> in settings (
+                <mark>chrome://settings/content/federatedIdentityApi</mark>
+                ).<br/>
+                <strong>Sometimes Chrome automatically blocks it</strong> for a specific address during testing. Mostly
+                when a user cancels the sign-in
                 dialog. If that happens, the address needs to be manually allowed to show third-party sign-in prompts.
             </li>
-            <li><strong>Run Keycloak on localhost.</strong> The port can be modified, but the default and preferred is <strong>8080</strong>.</li>
-            <li>Make sure this application is run on localhost on port 8081. If this port can not be used, this client needs to be reconfigured in the Keycloak admin console.</li>
+            <li><strong>Run Keycloak on localhost.</strong> The port can be modified, but the default and preferred is
+                <strong>8180</strong>.
+            </li>
+            <li>Make sure <strong>this application is run on localhost on port 8080</strong>. If this port can not be
+                used, this client needs to be reconfigured in the Keycloak admin console.
+            </li>
+        </ul>
+
+        <h2>Keycloak credentials</h2>
+        <p>Keycloak is already pre-configured with a realm and two users. These are the credentials used for signing in
+            to Keycloak</p>
+        <ul>
+            <li>
+                <a href="http://localhost:8180/realms/fedcm-realm/account" target="_blank">Keycloak account console</a>
+                <ul>
+                    <li>Username: user</li>
+                    <li>Password: password</li>
+                </ul>
+            </li>
+            <li>
+                <a href="http://localhost:8180" target="_blank">Keycloak admin console</a>
+                <ul>
+                    <li>Username: admin</li>
+                    <li>Password: admin</li>
+                </ul>
+            </li>
         </ul>
 
         <h2>Instructions for testing FedCM functionality</h2>
-        <p>Before proceeding, I suggest opening a new browser window, so the instructions can be read through, while
-            following them.</p>
+        <p>Before proceeding, I recommend opening a new browser tab, so the instructions can be read through, while
+            following them. Open also the <a href="http://localhost:8180/realms/fedcm-realm/account" target="_blank">Keycloak
+                account console</a> and the <a href="http://localhost:8180" target="_blank">Keycloak admin console</a>
+        </p>
+        <p>It is good to have the settings page open too, in case the third-party sign-in gets disabled. The settings
+            page is on <mark>chrome://settings/content/federatedIdentityApi</mark>
+        </p>
         <h3>First sign-up</h3>
         <ol>
-            <li>Navigate to the profile page by clicking the "My Profile" button at the top of the page</li>
-            <li></li>
+            <li>Sign in to the Keycloak account console.</li>
+            <li>Navigate to the profile page on the client application by clicking the "My Profile" button at the top of the page</li>
+            <li><em>(Optional) Set the port for the Keycloak server.</em></li>
+            <li>Do not set any other values in the form and click the "Sign in" button.</li>
+            <li>In the opened widget confirm two links for the privacy policy and terms of service are present.</li>
+            <li>Click continue</li>
+            <li>If the sign-in is successful the Sign in button changes to Sign out and the user information is
+                displayed.
+            </li>
+            <li>Click on the "Sign out" button.</li>
+            <li>The access token is now deleted and the User Profile section is empty.</li>
         </ol>
+
+        <h3>Following sign-ins</h3>
+        <ol>
+            <li>Sign in to the Keycloak account console.</li>
+            <li>Navigate to the profile page on the client application by clicking the "My Profile" button at the top of the page</li>
+            <li><em>(Optional) Set the port for the Keycloak server.</em></li>
+            <li>In the configuration form, click the "Mediation optional" option. Leave the rest of the options as they
+                are.
+            </li>
+            <li>Click on the "Sign in" button.</li>
+            <li>No prompt for user is shown, user is authenticated with Keycloak and User Profile is displayed.</li>
+            <li>Verify there is a client session for "example-client" by navigating to the Keycloak account console and
+                clicking the "Applications" item in the menu.
+            </li>
+            <li>Navigate back to the client application and the profile page.</li>
+            <li>Click on the "Show Access token" to display the JSON token in a new window.</li>
+            <li>The information in the User Profile section is parsed from the access token. To confirm the access token
+                can be used for requests to Keycloak, click the "Send request to Keycloak". This sends a request with
+                the token to the oidc userinfo endpoint and displays the JSON response.
+            </li>
+            <li>Press the "Sign out" button and sign in again. This time the automatic re-authentication is disabled and
+                the widgets prompts again for a consent.
+            </li>
+            <li>Press the "Sign out" button.</li>
+        </ol>
+
+        <h3>Login status API and Button mode</h3>
+        <ol>
+            <li>If signed in the Keycloak account console, sign out.</li>
+            <li>Navigate to the profile page on the client application by clicking the "My Profile" button at the top of the page.</li>
+            <li><em>(Optional) Set the port for the Keycloak server.</em></li>
+            <li>Make sure the Widget mode is chosen.</li>
+            <li>Click on the "Sign in" button.</li>
+            <li>After a while an error is returned. That is because Keycloak notified the browser that there is no
+                active session in this realm.
+            </li>
+            <li>Sign in to the account console.</li>
+            <li>From the flow modes, choose "Button mode" and sign in.</li>
+            <li>In the modal window, pick the account which should have the same information shown in the account
+                console. Sign out.
+            </li>
+        </ol>
+
+        <h3>Dynamic sign in-flow</h3>
+        <p>Before proceeding, it should be known, the current implementation does not inform the browser about a sign-in
+        status if the session is terminated, only when sign-out is performed.</p>
+        <ol>
+            <li>Sign in to the Keycloak account console.</li>
+            <li>
+                Navigate to the admin console. Ensure you are in the "fedcm-realm".
+                <ol>
+                    <li>Click on "Sessions" in the left menu.</li>
+                    <li>On the first item press the "account-console" link in the column "Clients"</li>
+                    <li>On the first item press the three vertical dots and press "Sign out".</li>
+                    <li>You are now signed out of the account console, but Chrome is not notified.</li>
+                </ol>
+            </li>
+            <li>Navigate to the profile page on the client application by clicking the "My Profile" button at the top of
+                the page.
+            </li>
+            <li><em>(Optional) Set the port for the Keycloak server.</em></li>
+            <li>In the configuration form, choose "Widget mode"</li>
+            <li>Press "Sign in"</li>
+            <li>You are presented with a prompt to sign in to the identity provider, because the browser expected a
+            signed in user. Press continue.
+            </li>
+            <li>Sign in as a user in the account console in the pop-up window</li>
+            <li>Open the browser console of this pop-up window (by default it is by pressing F12 and clicking "Console")
+            </li>
+            <li>Type in <em>IdentityProvider.close()</em> and hit enter.</li>
+            <li>Continue in the widget flow.</li>
+        </ol>
+
+        <h3>Notes for the button mode</h3>
+        <p>One of the features of the button mode is signing in to the identity provider. I can not absolutely confirm,
+            but the button mode currently has a bug. Upon clicking the "Sign in" button on the client, a pop-up window
+            opens, prompting the user for logging in to the account console. This window must be closed after a
+            successful authentication with<mark>IdentityProvider.close()</mark>. This is not done automatically, same as
+            in the dynamic sign-in flow mentioned in the technical report. It can be done manually through the
+            browser console, but the page freezes and the FedCM flow does not continue. This was partially fixed in
+            Chrome version 125 (the nightly build Canary), which unfreezes, but it returns an error. <strong>Hence, this
+            feature is not tested.</strong>
+        </p>
     </div>
 </div>
 </body>

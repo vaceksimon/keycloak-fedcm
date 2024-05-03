@@ -386,7 +386,7 @@ public class FedCMProvider implements RealmResourceProvider {
                 rb.location(URI.create("https://www.keycloak.org/getting-started/getting-started-zip#_secure_the_first_application"));
                 break;
             case access_denied:
-                rb.location(URI.create("https://www.keycloak.org/getting-started/getting-started-zip#_log_in_to_the_admin_console"));
+                rb.location(URI.create("https://www.keycloak.org/getting-started/getting-started-zip#_log_in_to_the_account_console"));
                 break;
             case invalid_request:
                 rb.location(URI.create("https://www.keycloak.org/guides#getting-started"));

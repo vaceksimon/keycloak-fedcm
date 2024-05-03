@@ -7,7 +7,6 @@
  * When change in the login status is detected, the page is rendered again to correspond to the state.
 */
 async function renderProfilePage() {
-    const formElement = document.getElementById("formFedCMConfig");
     const loginButton = document.getElementById("loginButton");
     const profileElement = document.getElementById('profileBody');
     const displayTokenBtn = document.getElementById('displayToken');
@@ -15,7 +14,6 @@ async function renderProfilePage() {
 
     const accessToken = await getJSONToken();
     if(accessToken === false) {
-        formElement.setAttribute("action", "javascript:login()")
         loginButton.setAttribute("class", "btn btn-outline-success")
         loginButton.innerHTML='Sign in';
         profileElement.innerHTML = 'You are not logged in';
@@ -25,7 +23,6 @@ async function renderProfilePage() {
         sendRequestBtn.disabled=true;
         return;
     }
-    formElement.setAttribute("action", "javascript:logout()")
     loginButton.setAttribute("class", "btn btn-outline-danger")
     loginButton.innerHTML='Sign out';
     displayTokenBtn.setAttribute("style", "cursor:pointer");
@@ -153,10 +150,12 @@ function getFedCMConfig() {
 }
 
 // Registering check function for the port input in the form
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async function () {
     renderProfilePage();
     document.getElementById('keycloakPort').addEventListener('keyup', checkPort);
     document.getElementById('keycloakPort').addEventListener('mouseup', checkPort);
+
+    document.getElementById('loginButton').addEventListener('click', fedcm);
 });
 
 // Registering a new render of the page if token cookie was changed or deleted
