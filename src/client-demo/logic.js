@@ -58,7 +58,7 @@ async function sendRequestWithToken() {
     // Load a proper port of Keycloak from the user form
     let port = document.getElementById('keycloakPort').value;
     if (document.getElementById('portFeedback').innerHTML !== '' || port === '') {
-        port = 8080;
+        port = 8180;
     }
 
     // prepare parameters for the request
@@ -140,7 +140,7 @@ function checkPort() {
 function getFedCMConfig() {
     let port = document.getElementById('keycloakPort').value;
     if (document.getElementById('portFeedback').innerHTML !== '' || port === '') {
-        port = 8080;
+        port = 8180;
     }
     let clientId = document.getElementById('clientID').value;
     if(clientId === '') {

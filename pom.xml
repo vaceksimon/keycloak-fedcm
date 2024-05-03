@@ -13,6 +13,7 @@
 
     <properties>
         <keycloak.version>${project.version}</keycloak.version>
+        <keycloak.port>8180</keycloak.port>
 
         <maven.plugins.compiler.version>3.13.0</maven.plugins.compiler.version>
         <maven.plugins.jar.version>3.3.0</maven.plugins.jar.version>
@@ -23,6 +24,7 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
     </properties>
 
     <dependencies>
@@ -126,7 +128,7 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>import-realm</id>
+                        <id>import</id>
                         <phase>none</phase>
                         <goals>
                             <goal>exec</goal>
@@ -142,7 +144,7 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>export-realm</id>
+                        <id>start</id>
                         <phase>none</phase>
                         <goals>
                             <goal>exec</goal>
@@ -151,26 +153,11 @@
                             <executable>bash</executable>
                             <arguments>
                                 <argument>${keycloak.distribution.path}/bin/kc.sh</argument>
-                                <argument>export</argument>
-                                <argument>--dir=${project.basedir}/data</argument>
-                                <argument>--users=realm_file</argument>
-                                <argument>--realm=fedcm-realm</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>start-server</id>
-                        <phase>none</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <executable>bash</executable>
-                            <arguments>
-                                <argument>${keycloak.distribution.path}/bin/kc.sh</argument>
+                                <argument>start-dev</argument>
                                 <argument>--debug</argument>
                                 <argument>5005</argument>
-                                <argument>start-dev</argument>
+                                <argument>--http-port</argument>
+                                <argument>${keycloak.port}</argument>
                                 <argument>--log-level=org.keycloak.fedcm:debug</argument>
                             </arguments>
                         </configuration>

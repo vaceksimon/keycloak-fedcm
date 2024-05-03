@@ -2264,8 +2264,8 @@
         "clientRole" : true,
         "containerId" : "89528c8b-22f4-4147-8895-98cc02c6a44c",
         "attributes" : {
-          "privacy-policy" : [ "http://localhost:8081/privacy-policy.html" ],
-          "terms-of-service" : [ "http://localhost:8081/terms-of-service.html" ]
+          "privacy-policy" : [ "http://localhost:8080/privacy-policy.html" ],
+          "terms-of-service" : [ "http://localhost:8080/terms-of-service.html" ]
         }
       } ],
       "security-admin-console" : [ ],
@@ -2566,7 +2566,7 @@
     "clientId" : "example-client",
     "name" : "",
     "description" : "",
-    "rootUrl" : "http://localhost:8081",
+    "rootUrl" : "http://localhost:8080",
     "adminUrl" : "",
     "baseUrl" : "",
     "surrogateAuthRequired" : false,
@@ -2574,7 +2574,7 @@
     "alwaysDisplayInConsole" : false,
     "clientAuthenticatorType" : "client-secret",
     "redirectUris" : [ "" ],
-    "webOrigins" : [ "http://localhost:8081" ],
+    "webOrigins" : [ "http://localhost:8080" ],
     "notBefore" : 0,
     "bearerOnly" : false,
     "consentRequired" : false,
@@ -2588,7 +2588,7 @@
     "attributes" : {
       "oidc.ciba.grant.enabled" : "false",
       "backchannel.logout.session.required" : "true",
-      "post.logout.redirect.uris" : "http://localhost:8081",
+      "post.logout.redirect.uris" : "http://localhost:8080",
       "oauth2.device.authorization.grant.enabled" : "false",
       "display.on.consent.screen" : "false",
       "backchannel.logout.revoke.offline.tokens" : "false"
