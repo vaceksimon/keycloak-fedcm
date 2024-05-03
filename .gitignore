@@ -5,9 +5,6 @@
 # Compiled class file
 *.class
 
-# Generated Javadoc
-docs/javadoc
-
 # Log file
 *.log
 
@@ -140,3 +137,9 @@ fabric.properties
 # add your custom gitignore here:
 !.gitignore
 !.gitsubmodules
+
+# Generated Javadoc
+docs/javadoc
+
+# Unpacked keycloak distribution
+keycloak-dist/

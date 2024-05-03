@@ -19,7 +19,9 @@
         <maven.plugins.jar.version>3.3.0</maven.plugins.jar.version>
         <maven.plugins.exec.version>3.2.0</maven.plugins.exec.version>
 
-        <keycloak.distribution.path>${project.build.directory}/unpacked/keycloak-${keycloak.version}</keycloak.distribution.path>
+        <keycloak.distribution.name>keycloak-${keycloak.version}</keycloak.distribution.name>
+        <keycloak.distribution.path>${project.basedir}/keycloak-dist/${keycloak.distribution.name}</keycloak.distribution.path>
+        <keycloak.distribution.dir>${project.basedir}/keycloak-dist/</keycloak.distribution.dir>
 
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
@@ -62,24 +64,6 @@
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>unpack-server-or-overlay</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>unpack</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-quarkus-dist</artifactId>
-                                    <version>${keycloak.version}</version>
-                                    <type>zip</type>
-                                    <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
-                    </execution>
-                    <execution>
                         <id>copy-extension-provider</id>
                         <phase>install</phase>
                         <goals>
@@ -111,6 +95,23 @@
                     </environmentVariables>
                 </configuration>
                 <executions>
+                    <execution>
+                        <id>unpack</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>unzip</executable>
+                            <arguments>
+                                <argument>-o</argument>
+                                <argument>-q</argument>
+                                <argument>${keycloak.distribution.path}.zip</argument>
+                                <argument>-d</argument>
+                                <argument>${keycloak.distribution.dir}</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
                     <execution>
                         <id>compile</id>
                         <phase>none</phase>
