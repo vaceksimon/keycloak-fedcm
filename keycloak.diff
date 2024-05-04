@@ -1,0 +1,120 @@
+diff --git a/services/src/main/java/org/keycloak/protocol/oidc/OIDCLoginProtocol.java b/services/src/main/java/org/keycloak/protocol/oidc/OIDCLoginProtocol.java
+index 814cedfba4..33eeffbc72 100755
+--- a/services/src/main/java/org/keycloak/protocol/oidc/OIDCLoginProtocol.java
++++ b/services/src/main/java/org/keycloak/protocol/oidc/OIDCLoginProtocol.java
+@@ -282,7 +282,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
+                 if (!clientConfig.isExcludeIssuerFromAuthResponse()) {
+                     redirectUri.addParam(OAuth2Constants.ISSUER, clientSession.getNote(OIDCLoginProtocol.ISSUER));
+                 }
+-                return redirectUri.build();
++                return redirectUri.build(true);
+             }
+ 
+             AccessTokenResponse res = responseBuilder.build();
+@@ -298,7 +298,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
+             }
+         }
+ 
+-        return redirectUri.build();
++        return redirectUri.build(true);
+     }
+ 
+     // For FAPI 1.0 Advanced
+@@ -324,7 +324,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
+         // Remove authenticationSession from current tab
+         new AuthenticationSessionManager(session).removeTabIdInAuthenticationSession(realm, authSession);
+ 
+-        return redirectUri.build();
++        return redirectUri.build(false);
+     }
+ 
+     private OIDCRedirectUriBuilder buildErrorRedirectUri(String redirect, String state, Error error) {
+@@ -379,7 +379,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
+ 
+         setupResponseTypeAndMode(clientData.getResponseType(), clientData.getResponseMode());
+         OIDCRedirectUriBuilder redirectUri = buildErrorRedirectUri(clientData.getRedirectUri(), clientData.getState(), error);
+-        return redirectUri.build();
++        return redirectUri.build(false);
+     }
+ 
+     private OAuth2ErrorRepresentation translateError(Error error) {
+diff --git a/services/src/main/java/org/keycloak/protocol/oidc/endpoints/AuthorizationEndpoint.java b/services/src/main/java/org/keycloak/protocol/oidc/endpoints/AuthorizationEndpoint.java
+index 2ea246a7d3..1ee36ec9b7 100755
+--- a/services/src/main/java/org/keycloak/protocol/oidc/endpoints/AuthorizationEndpoint.java
++++ b/services/src/main/java/org/keycloak/protocol/oidc/endpoints/AuthorizationEndpoint.java
+@@ -281,7 +281,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
+             errorResponseBuilder.addParam(OAuth2Constants.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
+         }
+ 
+-        return errorResponseBuilder.build();
++        return errorResponseBuilder.build(false);
+     }
+ 
+     private void updateAuthenticationSession() {
+diff --git a/services/src/main/java/org/keycloak/protocol/oidc/utils/LogoutUtil.java b/services/src/main/java/org/keycloak/protocol/oidc/utils/LogoutUtil.java
+index 1135ef226c..a4dcc01890 100644
+--- a/services/src/main/java/org/keycloak/protocol/oidc/utils/LogoutUtil.java
++++ b/services/src/main/java/org/keycloak/protocol/oidc/utils/LogoutUtil.java
+@@ -41,7 +41,7 @@ public class LogoutUtil {
+         String redirectUri = logoutSession.getAuthNote(OIDCLoginProtocol.LOGOUT_REDIRECT_URI);
+         if (redirectUri != null) {
+             URI finalRedirectUri = getRedirectUriWithAttachedState(redirectUri, logoutSession);
+-            return Response.status(302).location(finalRedirectUri).build();
++            return Response.status(302).location(finalRedirectUri).header("Set-Login", "logged-out").build();
+         }
+ 
+         SystemClientUtil.checkSkipLink(session, logoutSession);
+diff --git a/services/src/main/java/org/keycloak/protocol/oidc/utils/OIDCRedirectUriBuilder.java b/services/src/main/java/org/keycloak/protocol/oidc/utils/OIDCRedirectUriBuilder.java
+index 87bf9f3dcb..12e0fe6585 100644
+--- a/services/src/main/java/org/keycloak/protocol/oidc/utils/OIDCRedirectUriBuilder.java
++++ b/services/src/main/java/org/keycloak/protocol/oidc/utils/OIDCRedirectUriBuilder.java
+@@ -50,7 +50,7 @@ public abstract class OIDCRedirectUriBuilder {
+ 
+     public abstract OIDCRedirectUriBuilder addParam(String paramName, String paramValue);
+ 
+-    public abstract Response build();
++    public abstract Response build(boolean successfulAuth);
+ 
+ 
+     public static OIDCRedirectUriBuilder fromUri(String baseUri, OIDCResponseMode responseMode, KeycloakSession session, AuthenticatedClientSessionModel clientSession) {
+@@ -87,9 +87,12 @@ public abstract class OIDCRedirectUriBuilder {
+         }
+ 
+         @Override
+-        public Response build() {
++        public Response build(boolean successfulAuth) {
+             URI redirectUri = uriBuilder.build();
+             Response.ResponseBuilder location = Response.status(302).location(redirectUri);
++            if(successfulAuth) {
++                location.header("Set-Login", "logged-in");
++            }
+             return location.build();
+         }
+     }
+@@ -121,7 +124,7 @@ public abstract class OIDCRedirectUriBuilder {
+         }
+ 
+         @Override
+-        public Response build() {
++        public Response build(boolean successfulAuth) {
+             if (fragment != null) {
+                 uriBuilder.encodedFragment(fragment.toString());
+             }
+@@ -150,7 +153,7 @@ public abstract class OIDCRedirectUriBuilder {
+         }
+ 
+         @Override
+-        public Response build() {
++        public Response build(boolean successfulAuth) {
+             StringBuilder builder = new StringBuilder();
+             URI redirectUri = uriBuilder.build();
+ 
+@@ -210,7 +213,7 @@ public abstract class OIDCRedirectUriBuilder {
+         }
+ 
+         @Override
+-        public Response build() {
++        public Response build(boolean successfulAuth) {
+             KeycloakContext context = session.getContext();
+             ClientModel client = context.getClient();
+             RealmModel realm = client.getRealm();
