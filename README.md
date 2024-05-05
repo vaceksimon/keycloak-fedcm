@@ -15,7 +15,7 @@ The `docker` directory contains Docker images for execution and manual testing a
 
 As mentioned, the Keycloak distribution is in a ZIP file in `keycloak-dist`. This is used in case the project is executed with Maven. If it is, this file is decompressed, and the built fedcm extension is placed inside it during the server's start. Do not delete this ZIP file.
 
-The `mvnw` script and `mvnw.cmd` for Windows were generated from the `pom.xml` file. The maven wrapper scripts are the preferred method of compilation.
+The `mvnw` script and `mvnw.cmd` for Windows were generated from the `pom.xml` file. The Maven wrapper scripts are the preferred method of compilation.
 
 The `src` directory has the source code for both the main Keycloak FedCM extension, the object of this thesis, and a Javascript application for testing the FedCM functionality.
 ```
@@ -46,11 +46,10 @@ The `src` directory has the source code for both the main Keycloak FedCM extensi
         └── resources   - Configuration files for the SPI extension
             └── ...
 ```
-It is recommended that it be built and run on Linux distributions.
-
+**This project MUST be built and run on Linux distributions as it relies on bash and other utilities.**
 
 ## Building the project
-The FedCM extension to Keycloak is a Java Maven project. For building, it uses a maven wrapper. It can also be used for execution but is less preferred to the docker images.
+The FedCM extension to Keycloak is a Java Maven project. For building, it uses a Maven wrapper. It can also be used for execution but is less preferred to the docker images.
 
 ### Compile
 - To compile the extension and package it in a JAR in `target/keycloak-fedcm-999.0.0-SNAPSHOT.jar` run: \
@@ -62,7 +61,7 @@ The FedCM extension to Keycloak is a Java Maven project. For building, it uses a
 
 
 ## Running the project
-**The project is run and tested locally**. Both Keycloak and the client application must be hosted on **localhost**. The default port for Keycloak is `8180` and for the client application `8080`.
+**The project is run and tested locally**. Both Keycloak and the client application must be hosted on **localhost**. The default port for Keycloak is `8180` and for the client application `8080`. After successful execution, open the client application on `localhost:8080` and follow the instructions there.
 
 ### Running with Docker
 This guide can be followed exactly step by step. **It is advised to not run the containers in detached mode**, especially for Keycloak which runs a script depending on user input.
@@ -139,6 +138,35 @@ Once testing is done remove the container and the image:
 
 
 ### Running with Maven
-- For executing the project, it needs to be compiled, the Keycloak server configuration imported, and finally executed. To run the project with all these operations run: \
-`./mvnw exec:exec@compile exec:exec@import exec:exec@start`
 
+#### Running the client application
+The client application does not use Maven. It is a plain HTML and Javascript application with some Bootstrap CSS. It needs to be served on localhost, and the default port for it is `8080`. The `http-server` package is used to serve the client. It can be downloaded from the dependencies.
+
+1. Download the `http-server` package
+    - `npm install`
+2. Run the server. Other ports than `8080` can be used, but it requires reconfiguring Keycloak, as described below.
+    - `http-server ./src/client-demo/ -p 8080`
+
+#### Running Keycloak
+Before executing the Keycloak extension, the project needs to be built. The Keycloak server requires importing a configuration file with realms, users, and clients for testing. After, it can be run.
+
+- To compile the project run:
+  - `./mvnw exec:exec@compile`
+
+
+- The configuration file can be modified if the client application is running on a different port than `8080`:
+    - `./mvnw -Dclient.port=8080 exec:exec@reconfigure`
+- If a mistake was done in the configuration, it can be restored:
+    - `./mvnw exec:exec@config-default`
+
+
+- To import the configuration, run:
+  - `./mvnw exec:exec@import`
+
+
+- This command then runs the Keycloak server. The variable for a port can be omitted for a default value, or changed.
+  - `./mvnw exec:exec@start -Dkeycloak.port=8180`
+
+
+- **Typically, the whole execution would look like this**:
+  - `./mvnw -Dclient.port=8080 -Dkeycloak.port=8180 exec:exec@compile exec:exec@reconfigure exec:exec@import exec:exec@start`

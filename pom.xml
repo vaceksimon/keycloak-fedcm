@@ -14,6 +14,7 @@
     <properties>
         <keycloak.version>${project.version}</keycloak.version>
         <keycloak.port>8180</keycloak.port>
+        <client.port>8080</client.port>
 
         <maven.plugins.compiler.version>3.13.0</maven.plugins.compiler.version>
         <maven.plugins.jar.version>3.3.0</maven.plugins.jar.version>
@@ -22,6 +23,9 @@
         <keycloak.distribution.name>keycloak-${keycloak.version}</keycloak.distribution.name>
         <keycloak.distribution.path>${project.basedir}/keycloak-dist/${keycloak.distribution.name}</keycloak.distribution.path>
         <keycloak.distribution.dir>${project.basedir}/keycloak-dist/</keycloak.distribution.dir>
+        <data.dir>${project.basedir}/data</data.dir>
+        <data.config.current>${data.dir}/fedcm-demo.json</data.config.current>
+        <data.config.original>${data.dir}/fedcm-demo-original.json</data.config.original>
 
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
@@ -129,6 +133,36 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>reconfigure</id>
+                        <phase>none</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>sed</executable>
+                            <arguments>
+                                <argument>-i</argument>
+                                <argument>-e</argument>
+                                <argument>s/localhost:[0-9]*/localhost:${client.port}/g</argument>
+                                <argument>${data.config.current}</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>config-default</id>
+                        <phase>none</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>cp</executable>
+                            <arguments>
+                                <argument>${data.config.original}</argument>
+                                <argument>${data.config.current}</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>import</id>
                         <phase>none</phase>
                         <goals>
@@ -139,7 +173,7 @@
                             <arguments>
                                 <argument>${keycloak.distribution.path}/bin/kc.sh</argument>
                                 <argument>import</argument>
-                                <argument>--file=${project.basedir}/data/fedcm-demo.json</argument>
+                                <argument>--file=${data.config.current}</argument>
                                 <argument>--optimized</argument>
                             </arguments>
                         </configuration>
@@ -155,11 +189,8 @@
                             <arguments>
                                 <argument>${keycloak.distribution.path}/bin/kc.sh</argument>
                                 <argument>start-dev</argument>
-                                <argument>--debug</argument>
-                                <argument>5005</argument>
                                 <argument>--http-port</argument>
                                 <argument>${keycloak.port}</argument>
-                                <argument>--log-level=org.keycloak.fedcm:debug</argument>
                             </arguments>
                         </configuration>
                     </execution>
