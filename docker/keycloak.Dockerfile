@@ -1,10 +1,7 @@
 FROM eclipse-temurin:21
 LABEL authors="Simon Vacek"
 
-COPY keycloak-dist/keycloak-999.0.0-SNAPSHOT.zip .
-RUN apt-get update && \
-    apt-get install unzip -y && \
-    unzip -q keycloak-999.0.0-SNAPSHOT.zip
+COPY keycloak-dist/keycloak-999.0.0-SNAPSHOT/ ./keycloak-999.0.0-SNAPSHOT/
 WORKDIR keycloak-999.0.0-SNAPSHOT
 
 COPY target/keycloak-fedcm-999.0.0-SNAPSHOT.jar ./providers

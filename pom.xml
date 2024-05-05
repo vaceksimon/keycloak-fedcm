@@ -100,23 +100,6 @@
                 </configuration>
                 <executions>
                     <execution>
-                        <id>unpack</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <executable>unzip</executable>
-                            <arguments>
-                                <argument>-o</argument>
-                                <argument>-q</argument>
-                                <argument>${keycloak.distribution.path}.zip</argument>
-                                <argument>-d</argument>
-                                <argument>${keycloak.distribution.dir}</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
-                    <execution>
                         <id>compile</id>
                         <phase>none</phase>
                         <goals>
