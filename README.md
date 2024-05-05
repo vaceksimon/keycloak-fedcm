@@ -35,6 +35,7 @@ The `src` directory has the source code for both the main Keycloak FedCM extensi
 ├── keycloak.diff - Diff of changes done to base Keycloak
 ├── mvnw
 ├── mvnw.cmd
+├── package.json
 ├── pom.xml
 ├── README.md
 └── src
@@ -46,10 +47,13 @@ The `src` directory has the source code for both the main Keycloak FedCM extensi
         └── resources   - Configuration files for the SPI extension
             └── ...
 ```
-**This project MUST be built and run on Linux distributions as it relies on bash and other utilities.**
+## Prerequisites
+**This project MUST be built and run on Linux distributions as it relies on bash and other utilities.**\
+**OpenJDK 17** is recommended for building.\
+Maven wrapper requires the `JAVA_HOME` environment variable to be set.
 
 ## Building the project
-The FedCM extension to Keycloak is a Java Maven project. For building, it uses a Maven wrapper. It can also be used for execution but is less preferred to the docker images.
+The FedCM extension to Keycloak is a Java Maven project. For building, it uses a Maven wrapper. It can also be used for execution but is less preferred to the Docker images.
 
 ### Compile
 - To compile the extension and package it in a JAR in `target/keycloak-fedcm-999.0.0-SNAPSHOT.jar` run: \
@@ -66,8 +70,10 @@ The FedCM extension to Keycloak is a Java Maven project. For building, it uses a
 ### Running with Docker
 This guide can be followed exactly step by step. **It is advised to not run the containers in detached mode**, especially for Keycloak which runs a script depending on user input.
 
+The provided images do not rely on Docker. A daemonless container tool, Podman, could be used as an alternative to Docker—if Podman is preferable, substitute `docker` for `podman` in these commands.
+
 #### Running the client application
-1. Load the docker image
+1. Load the Docker image
    - `docker load -i docker/client.tar`
 2. Set environment variable for the client application port. The application will be hosted on this port.
    - `CLIENT_PORT=8080`
@@ -102,12 +108,12 @@ Because the chosen default ports may not be available, the container starts an i
 - `start` - This option starts Keycloak
 - `reconfigure` - This allows changing the Keycloak configuration for the client application port. It presents the user with another choice:
     - _`port`_ - port of the client application
-    - `default` - restores the original configuration for Keycloak set in the docker image.
+    - `default` - restores the original configuration for Keycloak set in the Docker image.
     - _These options only change the configuration file. This configuration must be imported to work._
       - _NOTE: These operations modify the original configuration file, meaning all other data stored in Keycloak is lost if it was not in the configuration already._
 - `import` - This option imports the configuration file.
 
-1. Load the docker image
+1. Load the Docker image
    - `docker load -i docker/keycloak.tar`
 2. Set environment variable for the port of Keycloak
    - `KEYCLOAK_PORT=8180`
@@ -120,7 +126,7 @@ If it is discovered the port for Keycloak was wrong, the container needs to be r
 2. Remove the container
    - `docker rm keycloak`
 3. Set environment variable for a different Keycloak port.
-   - `CLIENT_PORT=8180`
+   - `KEYCLOAK_PORT=8180`
 4. Run the container
    - `docker run -it --name keycloak -p $KEYCLOAK_PORT:$KEYCLOAK_PORT -e KEYCLOAK_PORT=$KEYCLOAK_PORT keycloak-fedcm`
 
@@ -144,7 +150,9 @@ The client application does not use Maven. It is a plain HTML and Javascript app
 
 1. Download the `http-server` package
     - `npm install`
-2. Run the server. Other ports than `8080` can be used, but it requires reconfiguring Keycloak, as described below.
+2. Create an alias for the http-server executable
+   - `alias http-server/node_modules/http-server/bin/http-server`
+3. Run the server. Other ports than `8080` can be used, but it requires reconfiguring Keycloak, as described below.
     - `http-server ./src/client-demo/ -p 8080`
 
 #### Running Keycloak

@@ -143,3 +143,4 @@ docs/javadoc
 
 # Unpacked keycloak distribution
 keycloak-dist/
+node_modules/
