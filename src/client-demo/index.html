@@ -112,13 +112,13 @@
         </ul>
 
         <h2>Instructions for testing FedCM functionality</h2>
-        <p>Before proceeding, I recommend opening a new browser tab, so the instructions can be read through, while
+        <p>Before proceeding, it is recommended to open a new browser tab so the instructions can be read through while
             following them. Open also the <a href="http://localhost:8180/realms/fedcm-realm/account" target="_blank">Keycloak
                 account console</a> and the <a href="http://localhost:8180/admin/master/console/#/fedcm-realm"
                                                target="_blank">Keycloak admin console</a>. Ensure the admin console
             opens in the fedcm-realm and not he master realm.
         </p>
-        <p>It is good to have the settings page open too, in case the third-party sign-in gets disabled. The settings
+        <p>It is also good to have the settings page open in case the third-party sign-in is disabled. The settings
             page is on <mark>chrome://settings/content/federatedIdentityApi</mark>
         </p>
         <h3>First sign-up</h3>
@@ -129,13 +129,13 @@
             </li>
             <li><em>(Optional) Set the port for the Keycloak server.</em></li>
             <li>Do not set any other values in the form and click the "Sign in" button.</li>
-            <li>In the opened widget confirm two links for the privacy policy and terms of service are present.</li>
-            <li>Click continue</li>
-            <li>If the sign-in is successful the Sign in button changes to Sign out and the user information is
+            <li>In the opened widget, confirm two links for the privacy policy and terms of service are present.</li>
+            <li>Click Continue</li>
+            <li>If the sign-in is successful, the Sign in button changes to Sign out, and the user information is
                 displayed.
             </li>
             <li>Click on the "Sign out" button.</li>
-            <li>The access token is now deleted and the User Profile section is empty.</li>
+            <li>The access token is now deleted, and the User Profile section is empty.</li>
         </ol>
 
         <h3>Following sign-ins</h3>
@@ -149,7 +149,7 @@
                 are.
             </li>
             <li>Click on the "Sign in" button.</li>
-            <li>No prompt for user is shown, user is authenticated with Keycloak and User Profile is displayed.</li>
+            <li>No prompt for the user is shown, the user is authenticated with Keycloak, and the User Profile is displayed.</li>
             <li>Verify there is a client session for "example-client" by navigating to the Keycloak account console and
                 clicking the "Applications" item in the menu.
             </li>
@@ -157,10 +157,10 @@
             <li>Click on the "Show Access token" to display the JSON token in a new window.</li>
             <li>The information in the User Profile section is parsed from the access token. To confirm the access token
                 can be used for requests to Keycloak, click the "Send request to Keycloak". This sends a request with
-                the token to the oidc userinfo endpoint and displays the JSON response.
+                the token to the OIDC userinfo endpoint and displays the JSON response.
             </li>
-            <li>Press the "Sign out" button and sign in again. This time the automatic re-authentication is disabled and
-                the widgets prompts again for a consent.
+            <li>Press the "Sign out" button and sign in again. This time, the automatic re-authentication is disabled,
+                and the widget prompts again for consent.
             </li>
             <li>Press the "Sign out" button.</li>
         </ol>
@@ -174,27 +174,27 @@
             <li><em>(Optional) Set the port for the Keycloak server.</em></li>
             <li>Make sure the Widget mode is chosen.</li>
             <li>Click on the "Sign in" button.</li>
-            <li>After a while an error is returned. That is because Keycloak notified the browser that there is no
+            <li>After a while, an error is returned. That is because Keycloak notified the browser that there is no
                 active session in this realm.
             </li>
             <li>Sign in to the account console.</li>
             <li>From the flow modes, choose "Button mode" and sign in.</li>
-            <li>In the modal window, pick the account which should have the same information shown in the account
+            <li>In the modal window, pick the account that should have the same information shown in the account
                 console. Sign out.
             </li>
         </ol>
 
         <h3>Dynamic sign in-flow</h3>
-        <p>Before proceeding, it should be known, the current implementation does not inform the browser about a sign-in
-            status if the session is terminated, only when sign-out is performed.</p>
+        <p>Before proceeding, it should be known that the current implementation does not inform the browser about a
+            sign-in status if the session is terminated, only when sign-out is performed.</p>
         <ol>
             <li>Sign in to the Keycloak account console.</li>
             <li>
                 Navigate to the admin console. Ensure you are in the "fedcm-realm".
                 <ol>
                     <li>Click on "Sessions" in the left menu.</li>
-                    <li>On the first item press the "account-console" link in the column "Clients"</li>
-                    <li>On the first item press the three vertical dots and press "Sign out".</li>
+                    <li>On the first item, press the "account-console" link in the column "Clients"</li>
+                    <li>On the first, item press the three vertical dots and press "Sign out".</li>
                     <li>You are now signed out of the account console, but Chrome is not notified.</li>
                 </ol>
             </li>
@@ -204,8 +204,8 @@
             <li><em>(Optional) Set the port for the Keycloak server.</em></li>
             <li>In the configuration form, choose "Widget mode"</li>
             <li>Press "Sign in"</li>
-            <li>You are presented with a prompt to sign in to the identity provider, because the browser expected a
-                signed in user. Press continue.
+            <li>You are presented with a prompt to sign in to the identity provider because the browser expected a
+                signed-in user. Press continue
             </li>
             <li>Sign in as a user in the account console in the pop-up window</li>
             <li>Open the browser console of this pop-up window (by default it is by pressing F12 and clicking "Console")

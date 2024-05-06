@@ -27,8 +27,8 @@ The `src` directory has the source code for both the main Keycloak FedCM extensi
 │   │   └── fedcm-demo-original.json     - contains a backup Keycloak configuration for import
 │   ├── docker
 │   │   ├── client.Dockerfile            - Dockerfile for building an image with the client application
-│   │   ├── entrypoint-keycloak.sh       - The scipt started within the Keycloak docker container
-│   │   └── keycloak.Dockerfile          - Dockerfile for building an image with Keycloak including the FedCM exntension
+│   │   ├── entrypoint-keycloak.sh       - The script started within the Keycloak docker container
+│   │   └── keycloak.Dockerfile          - Dockerfile for building an image with Keycloak including the FedCM extension
 │   ├── docs
 │   │   ├── javadoc                      - Here will be generated the Java API documentation
 │   │   └── report
@@ -45,7 +45,7 @@ The `src` directory has the source code for both the main Keycloak FedCM extensi
 │   │   └── main
 │   │       ├── java                     - Source code for the keycloak-fedcm SPI extension
 │   │       └── resources                - Configuration files for the SPI extension
-│   └── target                           - 
+│   └── target                           - Generated outputs of build
 ├── keycloak.tar                         - Docker image with the runnable Keycloak distribution including the FedCM extension
 └── xvacek10-report-sources.zip          - LaTeX sources for the technical report
 ```
@@ -55,7 +55,7 @@ The `src` directory has the source code for both the main Keycloak FedCM extensi
 Maven wrapper requires the `JAVA_HOME` environment variable to be set.
 
 ## Building the project
-The FedCM extension to Keycloak is a Java Maven project. For building, it uses a Maven wrapper. It can also be used for execution but is less preferred to the Docker images.
+The FedCM extension to Keycloak is a Java Maven project. It uses a Maven wrapper for building and execution but is less preferred to Docker images.
 
 ### Compile
 - To compile the extension and package it in a JAR in `target/keycloak-fedcm-999.0.0-SNAPSHOT.jar` run: \
@@ -70,7 +70,7 @@ The FedCM extension to Keycloak is a Java Maven project. For building, it uses a
 **The project is run and tested locally**. Both Keycloak and the client application must be hosted on **localhost**. The default port for Keycloak is `8180` and for the client application `8080`. After successful execution, open the client application on `localhost:8080` and follow the instructions there.
 
 ### Running with Docker
-This guide can be followed exactly step by step. **It is advised to not run the containers in detached mode**, especially for Keycloak which runs a script depending on user input.
+This guide can be followed exactly step by step. **It is advised not to run the containers in detached mode**, especially for Keycloak, which runs a script depending on user input.
 
 The provided images do not rely on Docker. A daemonless container tool, Podman, could be used as an alternative to Docker—if Podman is preferable, substitute `docker` for `podman` in these commands.
 
@@ -98,7 +98,7 @@ The container can be stopped and run again:
 2. Start the stopped container again
    - `docker start -ia client-app`
 
-Once testing is done remove the container and the image:
+Once testing is done, remove the container and the image:
 1. Remove the container
    - `docker rm client-app`
 2. Remove the image
@@ -138,7 +138,7 @@ The container can be stopped and run again:
 2. Start the stopped container again
    - `docker start -ia keycloak`
 
-Once testing is done remove the container and the image:
+Once testing is done, remove the container and the image:
 1. Remove the container
    - `docker rm keycloak`
 2. Remove the image
@@ -153,12 +153,12 @@ The client application does not use Maven. It is a plain HTML and Javascript app
 1. Download the `http-server` package
     - `npm install`
 2. Create an alias for the http-server executable
-   - `alias http-server/node_modules/http-server/bin/http-server`
+   - `alias http-server=node_modules/http-server/bin/http-server`
 3. Run the server. Other ports than `8080` can be used, but it requires reconfiguring Keycloak, as described below.
     - `http-server ./src/client-demo/ -p 8080`
 
 #### Running Keycloak
-Before executing the Keycloak extension, the project needs to be built. The Keycloak server requires importing a configuration file with realms, users, and clients for testing. After, it can be run.
+The project needs to be built before executing the Keycloak extension. The Keycloak server requires importing a configuration file with realms, users, and clients for testing. Then, it can be run.
 
 - To compile the project run:
   - `./mvnw exec:exec@compile`
@@ -166,7 +166,7 @@ Before executing the Keycloak extension, the project needs to be built. The Keyc
 
 - The configuration file can be modified if the client application is running on a different port than `8080`:
     - `./mvnw -Dclient.port=8080 exec:exec@reconfigure`
-- If a mistake was done in the configuration, it can be restored:
+- If a mistake was made in the configuration, it can be restored:
     - `./mvnw exec:exec@config-default`
 
 
@@ -174,7 +174,7 @@ Before executing the Keycloak extension, the project needs to be built. The Keyc
   - `./mvnw exec:exec@import`
 
 
-- This command then runs the Keycloak server. The variable for a port can be omitted for a default value, or changed.
+- This command then runs the Keycloak server. The variable for a port can be omitted for a default value or changed.
   - `./mvnw exec:exec@start -Dkeycloak.port=8180`
 
 
